@@ -157,7 +157,7 @@ int module_start(void)
 		return ret_val;
 	}
 
-	printk(KERN_ALERT "Hello SC profiler!\n");
+	printk(KERN_ALERT "Hello OpenMP trace profiler!\n");
 
 	return 0;
 }
@@ -165,7 +165,7 @@ int module_start(void)
 void module_end(void)
 {
 	unregister_chrdev(MAJOR_NUM, DEVICE_FILE_NAME);
-	printk(KERN_ALERT "Bye SC profiler!\n");
+	printk(KERN_ALERT "Bye OpenMP trace profiler!\n");
 }
 
 module_init(module_start);

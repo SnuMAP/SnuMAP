@@ -1,0 +1,3 @@
+#!/bin/bash
+OMP_PROFILER_ROOT=$PWD
+export OMP_PROFILER_ROOT
