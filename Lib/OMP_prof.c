@@ -44,15 +44,13 @@ int omp_init_profiling(void)
 	}
 
 	is_opened = 1;
-
-	/* must initiate worker threads before setting start_profiling flag */
-
 }
 
 int omp_start_profiling(void)
 {
 	if (is_opened) {
-		if (ioctl(fd, IOCTL_COMMAND_1, NULL) <= 0) {
+		//if (ioctl(fd, IOCTL_COMMAND_1, NULL) <= 0) {
+		if (ioctl(fd, 1, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
 		}
 	}
@@ -61,7 +59,8 @@ int omp_start_profiling(void)
 int omp_stop_profiling(void)
 {
 	if (is_opened) {
-		if (ioctl(fd, IOCTL_COMMAND_2, NULL) <= 0) {
+		//if (ioctl(fd, IOCTL_COMMAND_2, NULL) <= 0) {
+		if (ioctl(fd, 2, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
 		}
 	}
@@ -70,7 +69,8 @@ int omp_stop_profiling(void)
 int omp_dump_proflie_result(void)
 {
 	if (is_opened) {
-		if (ioctl(fd, IOCTL_COMMAND_3, NULL) <= 0) {
+		//if (ioctl(fd, IOCTL_COMMAND_3, NULL) <= 0) {
+		if (ioctl(fd, 3, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
 		}
 	}

@@ -64,7 +64,17 @@ void start_profiling(void)
 	struct task_struct* task = master_thread;
 
 	do {
+		int i = 0;
+
+		for (i = 0; i < 64; i++) {
+			task->profile_data.resume_time[i] =
+				kmalloc(sizeof(unsigned long)*10000, GFP_KERNEL);
+			task->profile_data.suspend_time[i] =
+				kmalloc(sizeof(unsigned long)*10000, GFP_KERNEL);
+		}
+
 		task->profile_data.starting_flag = 1;
+
 		task = next_thread(task);
 	} while (task != master_thread);
 }
@@ -88,7 +98,7 @@ void dump_profile_result(void)
 	do {
 		int i = 0;
 
-		for (i = 0; i < 64; i++) {
+		for (i = 0; i < 8; i++) {
 			printk(KERN_ALERT "task: %d cpu: %d resume: %d suspend: %d\n",
 					task->pid, i, task->profile_data.resume_cnt[i], task->profile_data.suspend_cnt[i]);
 		}
@@ -114,6 +124,7 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 		//case IOCTL_COMMAND_1: // IOCTL_START_PROFILING
 		case 1:
 		{
+			printk(KERN_ALERT "start_profiling called\n");
 			start_profiling();
 
 			break;
@@ -121,6 +132,7 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 		//case IOCTL_COMMAND_2: // IOCTL_STOP_PROFILING
 		case 2:
 		{
+			printk(KERN_ALERT "stop_profiling called\n");
 			stop_profiling();
 
 			break;
@@ -128,6 +140,7 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 		//case IOCTL_COMMAND_3: // IOCTL_DUMP_PROFILED_RESULT
 		case 3:
 		{
+			printk(KERN_ALERT "dump_profile_result called\n");
 			dump_profile_result();
 
 			break;

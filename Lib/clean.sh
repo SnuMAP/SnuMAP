@@ -1,2 +1,2 @@
-rm libRteComm.so
-rm rte_comm.o
+rm libOMPProf.so
+rm OMP_prof.o
