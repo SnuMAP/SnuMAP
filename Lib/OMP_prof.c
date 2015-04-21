@@ -69,10 +69,32 @@ int omp_stop_profiling(void)
 int omp_dump_proflie_result(void)
 {
 	if (is_opened) {
-		//if (ioctl(fd, IOCTL_COMMAND_3, NULL) <= 0) {
 		if (ioctl(fd, 3, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
 		}
+
+
+//		int i = 0, j = 0, k = 0;
+//		struct taskprofile_data data;
+
+//		if (ioctl(fd, 3, &data) < 0) {
+//			fprintf(stderr, "ioctl error\n");
+//		}
+//
+
+//		for (i=0; i<1; i++) {
+//			fprintf(stdout, "thread: %d\n", i);
+//
+//			for (j = 0; j < 8; j++) {
+//				fprintf(stdout, ">> cpu: %d resume_cnt: %d suspend_cnt: %d\n",
+//						j, data.resume_cnt[j], data.suspend_cnt[j]);
+//
+//				for (k = 0; k < data.resume_cnt[j]; k++) {
+//					fprintf(stdout, ">>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
+//							k, data.resume_time[j][k], data.suspend_time[j][k]);
+//				}
+//			}
+//		}
 	}
 }
 

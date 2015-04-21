@@ -62,6 +62,13 @@
 #define TILEGX
 #endif
 
+struct taskprofile_user_data {
+	int resume_cnt[64];
+	int suspend_cnt[64];
+	unsigned long resume_time[64][10000];
+	unsigned long suspend_time[64][10000];
+};
+
 struct task_struct *find_task_by_pid_ns(pid_t nr, struct pid_namespace *ns);
 struct task_struct *find_task_by_vpid(pid_t vnr);
 struct task_struct *find_process_by_pid(pid_t pid);

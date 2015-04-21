@@ -92,19 +92,54 @@ void stop_profiling(void)
 
 void dump_profile_result(void)
 {
+	//struct taskprofile_user_data data;
 	struct task_struct* master_thread = current;
 	struct task_struct* task = master_thread;
+	int i = 0;
 
 	do {
-		int i = 0;
+		int j = 0, k = 0;
 
-		for (i = 0; i < 8; i++) {
-			printk(KERN_ALERT "task: %d cpu: %d resume: %d suspend: %d\n",
-					task->pid, i, task->profile_data.resume_cnt[i], task->profile_data.suspend_cnt[i]);
+		printk(KERN_ALERT "thread: %d\n", i);
+
+		for (j = 0; j < 8; j++) {
+			printk(KERN_ALERT ">> cpu: %d resume_cnt: %d suspend_cnt: %d\n",
+					j, task->profile_data.resume_cnt[j], task->profile_data.suspend_cnt[j]);
+
+			for (k = 0; k < task->profile_data.resume_cnt[j]; k++) {
+				printk(KERN_ALERT ">>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
+						k, task->profile_data.resume_time[j][k], task->profile_data.suspend_time[j][k]);
+			}
 		}
 
+
+//		if (i == 0) {
+//			for (j = 0; j < 64; j++) {
+//				data.resume_cnt[j]
+//					= task->profile_data.resume_cnt[j];
+//				data.suspend_cnt[j]
+//					= task->profile_data.suspend_cnt[j];
+//
+//				for (k = 0; k < 10000; k++) {
+//					data.resume_time[j][k]
+//						= task->profile_data.resume_time[j][k];
+//					data.suspend_time[j][k]
+//						= task->profile_data.suspend_time[j][k];
+//				}
+//			}
+//		}
+//
+//		for (j = 0; j < 8; j++) {
+//			printk(KERN_ALERT "task: %d cpu: %d resume: %d suspend: %d\n",
+//					task->pid, j, task->profile_data.resume_cnt[j], task->profile_data.suspend_cnt[j]);
+//		}
+
 		task = next_thread(task);
+		i++;
+
 	} while (task != master_thread);
+
+	return;
 }
 
 #ifdef UNLOCKED
@@ -140,8 +175,12 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 		//case IOCTL_COMMAND_3: // IOCTL_DUMP_PROFILED_RESULT
 		case 3:
 		{
-			printk(KERN_ALERT "dump_profile_result called\n");
 			dump_profile_result();
+			//struct taskprofile_user_data data;
+			//printk(KERN_ALERT "dump_profile_result called\n");
+			//data = dump_profile_result();
+
+			//ret = copy_to_user((void*)arg, &data, sizeof(struct taskprofile_user_data));
 
 			break;
 		}

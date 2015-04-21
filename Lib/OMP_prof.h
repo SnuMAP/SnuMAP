@@ -27,6 +27,13 @@
 #include <sys/ioctl.h>
 #include <omp.h>
 
+struct taskprofile_data {
+	int resume_cnt[64];
+	int suspend_cnt[64];
+	unsigned long resume_time[64][10000];
+	unsigned long suspend_time[64][10000];
+};
+
 #define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
 #define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
 #define IOCTL_DUMP_PROFILED_RESULT _IOR(MAJOR_NUM, 3, NULL)
