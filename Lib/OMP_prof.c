@@ -23,6 +23,8 @@ int omp_init_profiling(void)
 	char buf[4096];
 	char* env = getenv("OMP_PROFILER_ROOT");
 	int i = 0;
+	
+	//fprintf(stdout, "omp_init_profileing called\n");
 
 	if (env == NULL) {
 		perror("getenv(OMP_PROFILER_ROOT)");
@@ -48,6 +50,7 @@ int omp_init_profiling(void)
 
 int omp_start_profiling(void)
 {
+	//fprintf(stdout, "omp_start_profiling called\n");
 	if (is_opened) {
 		//if (ioctl(fd, IOCTL_COMMAND_1, NULL) <= 0) {
 		if (ioctl(fd, 1, NULL) < 0) {
@@ -58,16 +61,19 @@ int omp_start_profiling(void)
 
 int omp_stop_profiling(void)
 {
+	//fprintf(stdout, "omp_stop_profiling called\n");
 	if (is_opened) {
 		//if (ioctl(fd, IOCTL_COMMAND_2, NULL) <= 0) {
 		if (ioctl(fd, 2, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
+			fprintf(stderr, "%s\n", explain_ioctl(fd, 2, NULL));
 		}
 	}
 }
 
-int omp_dump_proflie_result(void)
+int omp_dump_profile_result(void)
 {
+	//fprintf(stdout, "omp_dump_profile_result called\n");
 	if (is_opened) {
 		if (ioctl(fd, 3, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
@@ -76,12 +82,12 @@ int omp_dump_proflie_result(void)
 
 //		int i = 0, j = 0, k = 0;
 //		struct taskprofile_data data;
-
+//
 //		if (ioctl(fd, 3, &data) < 0) {
 //			fprintf(stderr, "ioctl error\n");
 //		}
 //
-
+//
 //		for (i=0; i<1; i++) {
 //			fprintf(stdout, "thread: %d\n", i);
 //
@@ -100,6 +106,7 @@ int omp_dump_proflie_result(void)
 
 int omp_cleanup_profiling(void)
 {
+	//fprintf(stdout, "omp_cleanup_profiling called\n");
 	if (is_opened) {
 		close(fd);
 	}

@@ -143,7 +143,7 @@ void dump_profile_result(void)
 }
 
 #ifdef UNLOCKED
-int profiler_ioctl(struct file *file,
+long profiler_ioctl(struct file *file,
 		unsigned int ioctl_num,
 		unsigned long arg)
 #else
@@ -175,6 +175,7 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 		//case IOCTL_COMMAND_3: // IOCTL_DUMP_PROFILED_RESULT
 		case 3:
 		{
+			printk(KERN_ALERT "dump_profiled_result called\n");
 			dump_profile_result();
 			//struct taskprofile_user_data data;
 			//printk(KERN_ALERT "dump_profile_result called\n");
@@ -186,7 +187,7 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 		}
 		default:
 		{
-			printk(KERN_ALERT "no support ioctl command %d", ioctl_num);
+			printk(KERN_ALERT "no support ioctl command %d\n", ioctl_num);
 
 			break;
 		}

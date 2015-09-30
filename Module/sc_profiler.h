@@ -115,7 +115,7 @@ int module_start(void);
 void module_end(void);
 
 #ifdef UNLOCKED
-int profiler_ioctl(struct file *file,
+long profiler_ioctl(struct file *file,
                    unsigned int ioctl_num,
                    unsigned long ioctl_param);
 

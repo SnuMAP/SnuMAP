@@ -54,7 +54,7 @@ int fd;
 int omp_init_profiling(void);
 int omp_start_profiling(void);
 int omp_stop_profiling(void);
-int omp_dump_proflie_result(void);
+int omp_dump_profile_result(void);
 int omp_cleanup_profiling(void);
 
 /// @}
