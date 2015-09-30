@@ -66,7 +66,6 @@ int omp_stop_profiling(void)
 		//if (ioctl(fd, IOCTL_COMMAND_2, NULL) <= 0) {
 		if (ioctl(fd, 2, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
-			fprintf(stderr, "%s\n", explain_ioctl(fd, 2, NULL));
 		}
 	}
 }
