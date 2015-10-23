@@ -7,6 +7,7 @@
 ///
 /// @section changelog Change Log
 /// 2015/04 Younghyun Cho created @n
+/// 2015/10 Heesik Shin updated data structure @n
 ///
 /// @section license_section Licence
 /// Copyright (c) 2015, Computer Systems and Platforms Laboratory
@@ -64,16 +65,44 @@ void start_profiling(void)
 	struct task_struct* task = master_thread;
 
 	do {
-		int i = 0;
+		//int i = 0;
+	  // it must be implemented to expand fixed size to flexible size.
+    //for (i = 0; i < 64; i++) {
+		//	task->profile_data.resume_time[i] =
+		//		kmalloc(sizeof(unsigned long)*10000, GFP_KERNEL);
+		//	task->profile_data.suspend_time[i] =
+		//		kmalloc(sizeof(unsigned long)*10000, GFP_KERNEL);
+		//}
 
-		for (i = 0; i < 64; i++) {
-			task->profile_data.resume_time[i] =
-				kmalloc(sizeof(unsigned long)*10000, GFP_KERNEL);
-			task->profile_data.suspend_time[i] =
-				kmalloc(sizeof(unsigned long)*10000, GFP_KERNEL);
-		}
+    // allocate memory
+    if (task->profile_data.data == NULL)
+    {
+      int i = 0;
+      int cpu_counts = num_online_cpus();
+      printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); 
+      task->profile_data.data
+        = kmalloc(sizeof(struct taskprofile_data_per_cpu) * cpu_counts, GFP_KERNEL);
+      // initialize memory.
+      for (i = 0; i < cpu_counts; i++)
+      {
+        task->profile_data.data[i].state = -1;
+        task->profile_data.data[i].context_switching_time
+          = kmalloc (sizeof(struct taskprofile_time), GFP_KERNEL);
+        task->profile_data.data[i].time_structure_counts = 1;
 
-		task->profile_data.starting_flag = 1;
+        // time data allocation and initialization
+        task->profile_data.data[i].context_switching_time->next = NULL;
+        task->profile_data.data[i].context_switching_time->resume_counts = 0;
+        task->profile_data.data[i].context_switching_time->suspend_counts = 0;
+        
+        task->profile_data.data[i].context_switching_time->resume_time
+          = kmalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
+        task->profile_data.data[i].context_switching_time->suspend_time
+          = kmalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
+      }
+    }
+
+//		task->profile_data.starting_flag = 1;
 
 		task = next_thread(task);
 	} while (task != master_thread);
@@ -101,16 +130,33 @@ void dump_profile_result(void)
 		int j = 0, k = 0;
 
 		printk(KERN_ALERT "thread: %d\n", i);
+    
+    for (j = 0; j < num_online_cpus(); j++)
+    {
+      printk(KERN_ALERT ">> cpu: %d state: %d resume_cnt: %d suspend_cnt: %d\n",
+					j,
+          task->profile_data.data[j].state,
+          task->profile_data.data[j].context_switching_time->resume_counts, 
+          task->profile_data.data[j].context_switching_time->suspend_counts);
 
-		for (j = 0; j < 8; j++) {
-			printk(KERN_ALERT ">> cpu: %d resume_cnt: %d suspend_cnt: %d\n",
-					j, task->profile_data.resume_cnt[j], task->profile_data.suspend_cnt[j]);
-
-			for (k = 0; k < task->profile_data.resume_cnt[j]; k++) {
+			for (k = 0; k < task->profile_data.data[j].context_switching_time->resume_counts; k++) {
 				printk(KERN_ALERT ">>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
-						k, task->profile_data.resume_time[j][k], task->profile_data.suspend_time[j][k]);
+						k, 
+            task->profile_data.data[j].context_switching_time->resume_time[k], 
+            task->profile_data.data[j].context_switching_time->suspend_time[k]);
 			}
-		}
+
+    }
+
+    //for (j = 0; j < 8; j++) {
+		//	printk(KERN_ALERT ">> cpu: %d resume_cnt: %d suspend_cnt: %d\n",
+		//			j, task->profile_data.resume_cnt[j], task->profile_data.suspend_cnt[j]);
+
+			//for (k = 0; k < task->profile_data.resume_cnt[j]; k++) {
+			//	printk(KERN_ALERT ">>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
+					//	k, task->profile_data.resume_time[j][k], task->profile_data.suspend_time[j][k]);
+			//}
+		//}
 
 
 //		if (i == 0) {

@@ -7,6 +7,7 @@
 ///
 /// @section changelog Change Log
 /// 2015/04 Younghyun Cho created
+/// 2015/10 Heesik Shin updated data structure
 ///
 /// @section license_section Licence
 /// Copyright (c) 2015 Computer Systems and Platforms Laboratory
