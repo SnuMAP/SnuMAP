@@ -76,7 +76,7 @@ void start_profiling(void)
       // initialize memory.
       for (i = 0; i < cpu_counts; i++)
       {
-        task->profile_data.cpu_data[i].initial_state = -1;
+        task->profile_data.cpu_data[i].initial_state = 0;
         task->profile_data.cpu_data[i].head
           = kmalloc (sizeof(struct taskprofile_list), GFP_KERNEL);
         task->profile_data.cpu_data[i].list_counts = 1;
