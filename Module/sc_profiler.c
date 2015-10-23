@@ -65,44 +65,35 @@ void start_profiling(void)
 	struct task_struct* task = master_thread;
 
 	do {
-		//int i = 0;
-	  // it must be implemented to expand fixed size to flexible size.
-    //for (i = 0; i < 64; i++) {
-		//	task->profile_data.resume_time[i] =
-		//		kmalloc(sizeof(unsigned long)*10000, GFP_KERNEL);
-		//	task->profile_data.suspend_time[i] =
-		//		kmalloc(sizeof(unsigned long)*10000, GFP_KERNEL);
-		//}
-
     // allocate memory
-    if (task->profile_data.data == NULL)
+    if (task->profile_data.cpu_data == NULL)
     {
       int i = 0;
       int cpu_counts = num_online_cpus();
-      printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); 
-      task->profile_data.data
-        = kmalloc(sizeof(struct taskprofile_data_per_cpu) * cpu_counts, GFP_KERNEL);
+      //printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); // Test code. 
+      task->profile_data.cpu_data
+        = kmalloc(sizeof(struct taskprofile_cpu_data) * cpu_counts, GFP_KERNEL);
       // initialize memory.
       for (i = 0; i < cpu_counts; i++)
       {
-        task->profile_data.data[i].state = -1;
-        task->profile_data.data[i].context_switching_time
-          = kmalloc (sizeof(struct taskprofile_time), GFP_KERNEL);
-        task->profile_data.data[i].time_structure_counts = 1;
+        task->profile_data.cpu_data[i].initial_state = -1;
+        task->profile_data.cpu_data[i].head
+          = kmalloc (sizeof(struct taskprofile_list), GFP_KERNEL);
+        task->profile_data.cpu_data[i].list_counts = 1;
 
         // time data allocation and initialization
-        task->profile_data.data[i].context_switching_time->next = NULL;
-        task->profile_data.data[i].context_switching_time->resume_counts = 0;
-        task->profile_data.data[i].context_switching_time->suspend_counts = 0;
+        task->profile_data.cpu_data[i].head->next = NULL;
+        task->profile_data.cpu_data[i].head->resume_counts = 0;
+        task->profile_data.cpu_data[i].head->suspend_counts = 0;
         
-        task->profile_data.data[i].context_switching_time->resume_time
+        task->profile_data.cpu_data[i].head->resume_time
           = kmalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
-        task->profile_data.data[i].context_switching_time->suspend_time
+        task->profile_data.cpu_data[i].head->suspend_time
           = kmalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
       }
     }
 
-//		task->profile_data.starting_flag = 1;
+		task->profile_data.starting_flag = 1;
 
 		task = next_thread(task);
 	} while (task != master_thread);
@@ -135,29 +126,18 @@ void dump_profile_result(void)
     {
       printk(KERN_ALERT ">> cpu: %d state: %d resume_cnt: %d suspend_cnt: %d\n",
 					j,
-          task->profile_data.data[j].state,
-          task->profile_data.data[j].context_switching_time->resume_counts, 
-          task->profile_data.data[j].context_switching_time->suspend_counts);
+          task->profile_data.cpu_data[j].initial_state,
+          task->profile_data.cpu_data[j].head->resume_counts, 
+          task->profile_data.cpu_data[j].head->suspend_counts);
 
-			for (k = 0; k < task->profile_data.data[j].context_switching_time->resume_counts; k++) {
+			for (k = 0; k < task->profile_data.cpu_data[j].head->resume_counts; k++) {
 				printk(KERN_ALERT ">>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
 						k, 
-            task->profile_data.data[j].context_switching_time->resume_time[k], 
-            task->profile_data.data[j].context_switching_time->suspend_time[k]);
+            task->profile_data.cpu_data[j].head->resume_time[k], 
+            task->profile_data.cpu_data[j].head->suspend_time[k]);
 			}
 
     }
-
-    //for (j = 0; j < 8; j++) {
-		//	printk(KERN_ALERT ">> cpu: %d resume_cnt: %d suspend_cnt: %d\n",
-		//			j, task->profile_data.resume_cnt[j], task->profile_data.suspend_cnt[j]);
-
-			//for (k = 0; k < task->profile_data.resume_cnt[j]; k++) {
-			//	printk(KERN_ALERT ">>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
-					//	k, task->profile_data.resume_time[j][k], task->profile_data.suspend_time[j][k]);
-			//}
-		//}
-
 
 //		if (i == 0) {
 //			for (j = 0; j < 64; j++) {
