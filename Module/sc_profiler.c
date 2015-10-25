@@ -115,8 +115,8 @@ int print_taskprofile_list(struct taskprofile_list *tp_current)
   int i = 0;
   int list_number = 0;
   int base_number = 0;
-  if (tp_current->next != NULL) list_number = print_taskprofile_list(tp_current->next);
-  else list_number = 0;
+  if (tp_current == NULL) return 0;
+  else list_number = print_taskprofile_list(tp_current->next);
 
   base_number = list_number * MAX_TIME_COUNT;
   for (i = 0; i < tp_current->resume_counts; i++) {
@@ -125,7 +125,7 @@ int print_taskprofile_list(struct taskprofile_list *tp_current)
         tp_current->resume_time[i], 
         tp_current->suspend_time[i]);
   }
-  return list_number++;
+  return ++list_number;
 }
 
 void dump_profile_result(void)
