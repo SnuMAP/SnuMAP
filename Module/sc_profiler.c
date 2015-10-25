@@ -73,13 +73,13 @@ void start_profiling(void)
       int cpu_counts = num_online_cpus();
       //printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); // Test code. 
       task->profile_data.cpu_data
-        = kmalloc(sizeof(struct taskprofile_cpu_data) * cpu_counts, GFP_KERNEL);
+        = kzalloc(sizeof(struct taskprofile_cpu_data) * cpu_counts, GFP_KERNEL);
       // initialize memory.
       for (i = 0; i < cpu_counts; i++)
       {
         task->profile_data.cpu_data[i].initial_state = 0;
         task->profile_data.cpu_data[i].head
-          = kmalloc (sizeof(struct taskprofile_list), GFP_KERNEL);
+          = kzalloc (sizeof(struct taskprofile_list), GFP_KERNEL);
         task->profile_data.cpu_data[i].list_counts = 1;
 
         // time data allocation and initialization
@@ -88,9 +88,9 @@ void start_profiling(void)
         task->profile_data.cpu_data[i].head->suspend_counts = 0;
         
         task->profile_data.cpu_data[i].head->resume_time
-          = kmalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
+          = kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
         task->profile_data.cpu_data[i].head->suspend_time
-          = kmalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
+          = kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
       }
     }
 
