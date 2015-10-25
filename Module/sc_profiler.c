@@ -8,6 +8,7 @@
 /// @section changelog Change Log
 /// 2015/04 Younghyun Cho created @n
 /// 2015/10 Heesik Shin updated data structure @n
+/// 2015/10 Heesik Shin apply IOCTL number macro. @n
 ///
 /// @section license_section Licence
 /// Copyright (c) 2015, Computer Systems and Platforms Laboratory
@@ -196,24 +197,21 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 	int ret = 0;
 
 	switch (ioctl_num) {
-		//case IOCTL_COMMAND_1: // IOCTL_START_PROFILING
-		case 1:
+    case _IOC_NR(IOCTL_START_PROFILING):
 		{
 			printk(KERN_ALERT "start_profiling called\n");
 			start_profiling();
 
 			break;
 		}
-		//case IOCTL_COMMAND_2: // IOCTL_STOP_PROFILING
-		case 2:
+    case _IOC_NR(IOCTL_STOP_PROFILING):
 		{
 			printk(KERN_ALERT "stop_profiling called\n");
 			stop_profiling();
 
 			break;
 		}
-		//case IOCTL_COMMAND_3: // IOCTL_DUMP_PROFILED_RESULT
-		case 3:
+    case _IOC_NR(IOCTL_DUMP_PROFILED_RESULT):
 		{
 			printk(KERN_ALERT "dump_profiled_result called\n");
 			dump_profile_result();

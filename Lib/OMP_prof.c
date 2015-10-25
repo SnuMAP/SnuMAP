@@ -7,6 +7,7 @@
 ///
 /// @section changelog Change Log
 /// 2015/04 Younghyun Cho created
+/// 2015/10 Heesik Shin apply IOCTL number macro.
 ///
 /// @section license_section Licence
 /// Copyright (c) 2015, Computer Systems and Platforms Laboratory
@@ -52,8 +53,7 @@ int omp_start_profiling(void)
 {
 	//fprintf(stdout, "omp_start_profiling called\n");
 	if (is_opened) {
-		//if (ioctl(fd, IOCTL_COMMAND_1, NULL) <= 0) {
-		if (ioctl(fd, 1, NULL) < 0) {
+		if (ioctl(fd, IOCTL_START_PROFILING, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
 		}
 	}
@@ -63,8 +63,7 @@ int omp_stop_profiling(void)
 {
 	//fprintf(stdout, "omp_stop_profiling called\n");
 	if (is_opened) {
-		//if (ioctl(fd, IOCTL_COMMAND_2, NULL) <= 0) {
-		if (ioctl(fd, 2, NULL) < 0) {
+		if (ioctl(fd, IOCTL_STOP_PROFILING, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
 		}
 	}
@@ -74,7 +73,7 @@ int omp_dump_profile_result(void)
 {
 	//fprintf(stdout, "omp_dump_profile_result called\n");
 	if (is_opened) {
-		if (ioctl(fd, 3, NULL) < 0) {
+		if (ioctl(fd, IOCTL_DUMP_PROFILED_RESULT, NULL) < 0) {
 			fprintf(stderr, "ioctl error\n");
 		}
 

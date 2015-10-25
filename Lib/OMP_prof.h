@@ -7,6 +7,7 @@
 ///
 /// @section changelog Change Log
 /// 2015/04 Younghyun Cho created
+/// 2015/10 Heesik Shin apply IOCTL number macro.
 ///
 /// @section license_section Licence
 /// Copyright (c) 2015, Computer Systems and Platforms Laboratory
@@ -37,10 +38,6 @@ struct taskprofile_data {
 #define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
 #define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
 #define IOCTL_DUMP_PROFILED_RESULT _IOR(MAJOR_NUM, 3, NULL)
-
-#define IOCTL_COMMAND_1 IOCTL_START_PROFILING
-#define IOCTL_COMMAND_2 IOCTL_STOP_PROFILING
-#define IOCTL_COMMAND_3 IOCTL_DUMP_PROFILED_RESULT
 
 #define DEVICE_FILE_NAME "profiler_mailbox"
 #define MAJOR_NUM 101
