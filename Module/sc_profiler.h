@@ -106,6 +106,9 @@ static ssize_t profiler_write(struct file *file,
                               size_t length,
                               loff_t *offset);
 
+/* helper functions implementation */
+int print_taskprofile_list(struct taskprofile_list* tp_current);
+
 /* basic functionalities implementation */
 void start_profiling(void);
 void stop_profiling(void);

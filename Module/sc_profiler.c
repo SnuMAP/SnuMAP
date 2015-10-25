@@ -110,6 +110,24 @@ void stop_profiling(void)
 	} while (task != master_thread);
 }
 
+int print_taskprofile_list(struct taskprofile_list *tp_current)
+{
+  int i = 0;
+  int list_number = 0;
+  int base_number = 0;
+  if (tp_current->next != NULL) list_number = print_taskprofile_list(tp_current->next);
+  else list_number = 0;
+
+  base_number = list_number * MAX_TIME_COUNT;
+  for (i = 0; i < tp_current->resume_counts; i++) {
+    printk(KERN_ALERT ">>>>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
+        base_number + i, 
+        tp_current->resume_time[i], 
+        tp_current->suspend_time[i]);
+  }
+  return list_number++;
+}
+
 void dump_profile_result(void)
 {
 	//struct taskprofile_user_data data;
@@ -124,19 +142,16 @@ void dump_profile_result(void)
     
     for (j = 0; j < num_online_cpus(); j++)
     {
-      printk(KERN_ALERT ">> cpu: %d state: %d resume_cnt: %d suspend_cnt: %d\n",
-					j,
+      struct taskprofile_list *tp_current;
+      int base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_length-1);
+      printk(KERN_ALERT ">> cpu: %d initial_state: %d list_length: %d\n", 
+          j, 
           task->profile_data.cpu_data[j].initial_state,
-          task->profile_data.cpu_data[j].head->resume_counts, 
-          task->profile_data.cpu_data[j].head->suspend_counts);
-
-			for (k = 0; k < task->profile_data.cpu_data[j].head->resume_counts; k++) {
-				printk(KERN_ALERT ">>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
-						k, 
-            task->profile_data.cpu_data[j].head->resume_time[k], 
-            task->profile_data.cpu_data[j].head->suspend_time[k]);
-			}
-
+          task->profile_data.cpu_data[j].list_length);
+      printk(KERN_ALERT ">>>> resume_cnt: %d suspend_cnt: %d\n",
+            base_number + task->profile_data.cpu_data[j].head->resume_counts, 
+            base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
+      print_taskprofile_list(task->profile_data.cpu_data[j].head);
     }
 
 //		if (i == 0) {
