@@ -136,18 +136,17 @@ void dump_profile_result(void)
 	int i = 0;
 
 	do {
-		int j = 0, k = 0;
+		int j = 0;
 
 		printk(KERN_ALERT "thread: %d\n", i);
     
     for (j = 0; j < num_online_cpus(); j++)
     {
-      struct taskprofile_list *tp_current;
-      int base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_length-1);
-      printk(KERN_ALERT ">> cpu: %d initial_state: %d list_length: %d\n", 
+      int base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
+      printk(KERN_ALERT ">> cpu: %d initial_state: %d list_counts: %d\n", 
           j, 
           task->profile_data.cpu_data[j].initial_state,
-          task->profile_data.cpu_data[j].list_length);
+          task->profile_data.cpu_data[j].list_counts);
       printk(KERN_ALERT ">>>> resume_cnt: %d suspend_cnt: %d\n",
             base_number + task->profile_data.cpu_data[j].head->resume_counts, 
             base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
