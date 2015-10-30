@@ -64,12 +64,8 @@
 #define TILEGX
 #endif
 
-struct taskprofile_user_data {
-	int resume_cnt[64];
-	int suspend_cnt[64];
-	unsigned long resume_time[64][10000];
-	unsigned long suspend_time[64][10000];
-};
+// ioctl definition
+#include "../Include/ioctldef.h"
 
 struct task_struct *find_task_by_pid_ns(pid_t nr, struct pid_namespace *ns);
 struct task_struct *find_task_by_vpid(pid_t vnr);
@@ -77,13 +73,6 @@ struct task_struct *find_process_by_pid(pid_t pid);
 
 #define DEBUG_MODE 0
 #define ACCESS_ONLY_ONE 0
-
-#define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
-#define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
-#define IOCTL_DUMP_PROFILED_RESULT _IOR(MAJOR_NUM, 3, NULL)
-
-#define DEVICE_FILE_NAME "profiler_mailbox"
-#define MAJOR_NUM 101
 
 #define SUCCESS 0
 
