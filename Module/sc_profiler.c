@@ -131,7 +131,6 @@ int print_taskprofile_list(struct taskprofile_list *tp_current)
 
 void dump_profile_result(void)
 {
-	//struct taskprofile_user_data data;
 	struct task_struct* master_thread = current;
 	struct task_struct* task = master_thread;
 	int i = 0;
@@ -153,27 +152,6 @@ void dump_profile_result(void)
             base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
       print_taskprofile_list(task->profile_data.cpu_data[j].head);
     }
-
-//		if (i == 0) {
-//			for (j = 0; j < 64; j++) {
-//				data.resume_cnt[j]
-//					= task->profile_data.resume_cnt[j];
-//				data.suspend_cnt[j]
-//					= task->profile_data.suspend_cnt[j];
-//
-//				for (k = 0; k < 10000; k++) {
-//					data.resume_time[j][k]
-//						= task->profile_data.resume_time[j][k];
-//					data.suspend_time[j][k]
-//						= task->profile_data.suspend_time[j][k];
-//				}
-//			}
-//		}
-//
-//		for (j = 0; j < 8; j++) {
-//			printk(KERN_ALERT "task: %d cpu: %d resume: %d suspend: %d\n",
-//					task->pid, j, task->profile_data.resume_cnt[j], task->profile_data.suspend_cnt[j]);
-//		}
 
 		task = next_thread(task);
 		i++;
@@ -215,11 +193,6 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 		{
 			printk(KERN_ALERT "dump_profiled_result called\n");
 			dump_profile_result();
-			//struct taskprofile_user_data data;
-			//printk(KERN_ALERT "dump_profile_result called\n");
-			//data = dump_profile_result();
-
-			//ret = copy_to_user((void*)arg, &data, sizeof(struct taskprofile_user_data));
 
 			break;
 		}

@@ -16,23 +16,9 @@
 /// 
 //------------------------------------------------------------------------------
 
-struct taskprofile_user_data {
-  int counts;
-  int initial_state;
-	int resume_counts;
-	int suspend_counts;
-	unsigned long* resume_time;
-	unsigned long* suspend_time;
-};
-struct taskprofile_user_data {
-  int needbytes;
-  int cpu_counts;
-  struct taskprofile_user_cpu_data *cpu_data;
-}
-
-#define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
-#define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
-#define IOCTL_DUMP_PROFILED_RESULT _IORW(MAJOR_NUM, 3, struct taskprofile_user_data*)
+#define IOCTL_START_PROFILING      _IO(MAJOR_NUM, 1)
+#define IOCTL_STOP_PROFILING       _IO(MAJOR_NUM, 2)
+#define IOCTL_DUMP_PROFILED_RESULT _IO(MAJOR_NUM, 3)
 
 #define DEVICE_FILE_NAME "profiler_mailbox"
 #define MAJOR_NUM 101
