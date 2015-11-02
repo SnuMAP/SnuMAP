@@ -29,7 +29,12 @@
 #include <omp.h>
 
 // ioctl definition
-#include "../Include/ioctldef.h"
+#define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
+#define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
+#define IOCTL_DUMP_PROFILED_RESULT _IOR(MAJOR_NUM, 3, NULL)
+
+#define DEVICE_FILE_NAME "profiler_mailbox"
+#define MAJOR_NUM 101
 
 int is_opened;
 int fd;

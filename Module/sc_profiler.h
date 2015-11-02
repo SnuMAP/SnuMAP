@@ -65,7 +65,12 @@
 #endif
 
 // ioctl definition
-#include "../Include/ioctldef.h"
+#define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
+#define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
+#define IOCTL_DUMP_PROFILED_RESULT _IOR(MAJOR_NUM, 3, NULL)
+
+#define DEVICE_FILE_NAME "profiler_mailbox"
+#define MAJOR_NUM 101
 
 struct task_struct *find_task_by_pid_ns(pid_t nr, struct pid_namespace *ns);
 struct task_struct *find_task_by_vpid(pid_t vnr);

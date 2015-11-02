@@ -174,7 +174,7 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 {
 	int ret = 0;
 
-	switch (ioctl_num) {
+	switch (_IOC_NR(ioctl_num)) {
     case _IOC_NR(IOCTL_START_PROFILING):
 		{
 			printk(KERN_ALERT "start_profiling called\n");
