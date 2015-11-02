@@ -60,6 +60,59 @@ static ssize_t profiler_write(struct file *file,
 	return SUCCESS;
 }
 
+// file operation
+struct file* file_open(const char* path, int flags, int rights)
+{
+  struct file* filp = NULL;
+  mm_segment_t oldfs;
+  int err = 0;
+
+  oldfs = get_fs();
+  set_fs(get_ds());
+  filp = filp_open(path, flags, rights);
+  set_fs(oldfs);
+  if(IS_ERR(filp)) {
+    err = PTR_ERR(filp);
+    return NULL;
+  }
+  return filp;
+}
+void file_close(struct file* file)
+{
+  filp_close(file, NULL);
+}
+int file_read(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size)
+{
+  mm_segment_t oldfs;
+  int ret;
+
+  oldfs = get_fs();
+  set_fs(get_ds());
+
+  ret = vfs_read(file, data, size, &offset);
+
+  set_fs(oldfs);
+  return ret;
+}
+int file_write(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size)
+{
+  mm_segment_t oldfs;
+  int ret;
+
+  oldfs = get_fs();
+  set_fs(get_ds());
+
+  ret = vfs_write(file, data, size, &offset);
+
+  set_fs(oldfs);
+  return ret;
+}
+int file_sync(struct file* file)
+{
+  vfs_fsync(file, 0);
+  return 0;
+}
+
 void start_profiling(void)
 {
 	struct task_struct* master_thread = current;
@@ -93,8 +146,8 @@ void start_profiling(void)
           = kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
       }
     }
-
-		task->profile_data.starting_flag = 1;
+    
+    task->profile_data.starting_flag = 1;
 
 		task = next_thread(task);
 	} while (task != master_thread);
@@ -129,13 +182,60 @@ int print_taskprofile_list(struct taskprofile_list *tp_current)
   return ++list_number;
 }
 
+char * strcat(char *dest, const char *src)
+{
+  int i,j;
+  for (i = 0; dest[i] != '\0'; i++)
+    ;
+  for (j = 0; src[j] != '\0'; j++)
+    dest[i+j] = src[j];
+  dest[i+j] = '\0';
+  return dest;
+}
+
+char* get_exe_path(struct mm_struct *mm, char* pathname)
+{
+  char *p = NULL;
+  if (mm) {
+    down_read(&mm->mmap_sem);
+    if (mm->exe_file) {
+      if (pathname) {
+        p = d_path(&mm->exe_file->f_path, pathname, PATH_MAX);
+      }
+    }
+    up_read(&mm->mmap_sem);
+  }
+  return p;
+}
+
 void dump_profile_result(void)
 {
 	struct task_struct* master_thread = current;
 	struct task_struct* task = master_thread;
 	int i = 0;
 
-	do {
+  // dump path 
+  struct file *fs = NULL;
+  char *pathname = kzalloc(PATH_MAX, GFP_KERNEL);
+  if (pathname)
+  {
+    char *p = get_exe_path(current->active_mm, pathname);
+    if (p)
+    {
+      strcat(p, ".dump"); // make exe_dump as result file 
+      fs = file_open(p, O_WRONLY | O_CREAT, 0644);
+      if (fs == NULL)
+      {
+        printk(KERN_ALERT "%s open failed\n",p);
+        fs = file_open("/etc/log.sc_profiler", O_WRONLY | O_CREAT, 0644);
+        if (fs == NULL)
+          printk(KERN_ALERT "dump_profile_result failed with file_open failure.\n");
+      }
+    }
+    kfree(pathname);
+  }
+
+  do {
 		int j = 0;
 
 		printk(KERN_ALERT "thread: %d\n", i);
@@ -157,6 +257,14 @@ void dump_profile_result(void)
 		i++;
 
 	} while (task != master_thread);
+
+
+  if (fs)
+  {
+    printk(KERN_ALERT "dump file closing..\n");
+    file_sync(fs);
+    file_close(fs);
+  }
 
 	return;
 }

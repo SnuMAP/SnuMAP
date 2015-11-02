@@ -64,6 +64,15 @@
 #define TILEGX
 #endif
 
+// file operation
+#include <asm/segment.h>
+#include <linux/buffer_head.h>
+struct file* file_open(const char* path, int flags, int rights);
+void file_close(struct file* file);
+int file_read(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size);
+int file_write(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size);
+int file_sync(struct file* file);
+
 // ioctl definition
 #define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
 #define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
