@@ -73,6 +73,7 @@ struct file* file_open(const char* path, int flags, int rights)
   set_fs(oldfs);
   if(IS_ERR(filp)) {
     err = PTR_ERR(filp);
+    printk(KERN_ALERT "file_open returns NULL with flip error\n");
     return NULL;
   }
   return filp;
@@ -193,6 +194,8 @@ char * strcat(char *dest, const char *src)
   return dest;
 }
 
+// FIXME
+// I think it causes kernel panic.
 char* get_exe_path(struct mm_struct *mm, char* pathname)
 {
   char *p = NULL;
@@ -216,24 +219,31 @@ void dump_profile_result(void)
 
   // dump path 
   struct file *fs = NULL;
-  char *pathname = kzalloc(PATH_MAX, GFP_KERNEL);
-  if (pathname)
-  {
-    char *p = get_exe_path(current->active_mm, pathname);
-    if (p)
-    {
-      strcat(p, ".dump"); // make exe_dump as result file 
-      fs = file_open(p, O_WRONLY | O_CREAT, 0644);
-      if (fs == NULL)
-      {
-        printk(KERN_ALERT "%s open failed\n",p);
-        fs = file_open("/etc/log.sc_profiler", O_WRONLY | O_CREAT, 0644);
-        if (fs == NULL)
-          printk(KERN_ALERT "dump_profile_result failed with file_open failure.\n");
-      }
-    }
-    kfree(pathname);
-  }
+//  char *pathname = kzalloc(PATH_MAX, GFP_KERNEL);
+//  if (pathname)
+//  {
+//    char *p = get_exe_path(current->active_mm, pathname);
+//    if (p)
+//    {
+//      strcat(p, ".dump"); // make exe_dump as result file 
+//      fs = file_open(p, O_WRONLY | O_CREAT, 0644);
+//      if (fs == NULL)
+//      {
+//        printk(KERN_ALERT "%s open failed\n",p);
+
+          // FIXME
+          // cannot open due to access deny, I guess.
+          fs = file_open("/var/log/sc_profiler.log", O_WRONLY | O_CREAT, 0644);
+          if (fs == NULL)
+          {
+//            fs = file_open("/home/urop/sc_profiler.log", O_WRONLY | O_CREAT, 0644);
+//            if (fs == NULL)
+              printk(KERN_ALERT "dump_profile_result failed with file_open failure.\n");
+          }
+//      }
+//    }
+//    kfree(pathname);
+//  }
 
   do {
 		int j = 0;
