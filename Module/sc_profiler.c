@@ -23,6 +23,62 @@
  */
 #include "sc_profiler.h"
 
+// Helper Functions
+int print_taskprofile_list(struct file_write_data* fw_data, struct taskprofile_list *tp_current)
+{
+  int i = 0;
+  int list_number = 0;
+  int base_number = 0;
+  if (tp_current == NULL) return 0;
+  else list_number = print_taskprofile_list(fw_data, tp_current->next);
+
+  base_number = list_number * MAX_TIME_COUNT;
+  for (i = 0; i < tp_current->resume_counts; i++) {
+    print_log(fw_data, ">>>>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
+        base_number + i, 
+        tp_current->resume_time[i], 
+        tp_current->suspend_time[i]);
+  }
+  return ++list_number;
+}
+
+char * strcat(char *dest, const char *src)
+{
+  int i,j;
+  for (i = 0; dest[i] != '\0'; i++)
+    ;
+  for (j = 0; src[j] != '\0'; j++)
+    dest[i+j] = src[j];
+  dest[i+j] = '\0';
+  return dest;
+}
+
+char * strcpy(char *dest, const char *src)
+{
+  int i;
+  for (i=0; src[i] != '\0'; i++)
+    dest[i] = src[i];
+  dest[i] = '\0';
+  return dest;
+}
+
+char* get_exe_path(struct mm_struct *mm)
+{
+  char *p = NULL;
+  if (mm) {
+    down_read(&mm->mmap_sem);
+    if (mm->exe_file) {
+      char *pathname = kzalloc(PATH_MAX, GFP_ATOMIC);
+      if (pathname) {
+        p = d_path(&mm->exe_file->f_path, pathname, PATH_MAX);
+      }
+    }
+    up_read(&mm->mmap_sem);
+  }
+  return p;
+}
+
+
 static int profiler_open(struct inode *inode, struct file *file)
 {
 #if ACCESS_ONLY_ONE
@@ -123,14 +179,34 @@ void print_log(struct file_write_data* fw_data, const char *fmt, ...)
   {
     va_start(args, fmt);
     i = vsnprintf(buf, 256, fmt, args);
-    if (fw_data == NULL || fw_data->file == NULL)
+    if (fw_data == NULL)
     {
       printk(KERN_ALERT "%s", buf);
+    }
+    else if(fw_data->file == NULL)
+    {
+      printk(KERN_ALERT "file open failed . %s", buf);
     }
     else
     {
       // write to file log.
       // have to consider what offset which file ends is. 
+      printk(KERN_ALERT "test for . %s", buf);
+
+      // handle over uulong size. 
+      // add file name postfix number.
+      if (fw_data->offset + i >= ULLONG_MAX)
+      {
+        const char c = '0'+fw_data->file_number++;
+        file_sync(fw_data->file);
+        file_close(fw_data->file);
+        fw_data->file = NULL;
+        fw_data->offset = 0;
+        strcat(fw_data->dump_path, &c);
+        fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
+        if (fw_data->file == NULL)
+          printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
+      }
       fw_data->offset += file_write(fw_data->file, fw_data->offset, buf, i);
     }
     va_end(args);
@@ -189,65 +265,12 @@ void stop_profiling(void)
 	} while (task != master_thread);
 }
 
-int print_taskprofile_list(struct file_write_data* fw_data, struct taskprofile_list *tp_current)
-{
-  int i = 0;
-  int list_number = 0;
-  int base_number = 0;
-  if (tp_current == NULL) return 0;
-  else list_number = print_taskprofile_list(fw_data, tp_current->next);
-
-  base_number = list_number * MAX_TIME_COUNT;
-  for (i = 0; i < tp_current->resume_counts; i++) {
-    print_log(fw_data, ">>>>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
-        base_number + i, 
-        tp_current->resume_time[i], 
-        tp_current->suspend_time[i]);
-  }
-  return ++list_number;
-}
-
-char * strcat(char *dest, const char *src)
-{
-  int i,j;
-  for (i = 0; dest[i] != '\0'; i++)
-    ;
-  for (j = 0; src[j] != '\0'; j++)
-    dest[i+j] = src[j];
-  dest[i+j] = '\0';
-  return dest;
-}
-
-char * strcpy(char *dest, const char *src)
-{
-  int i;
-  for (i=0; src[i] != '\0'; i++)
-    dest[i] = src[i];
-  dest[i] = '\0';
-  return dest;
-}
-
-char* get_exe_path(struct mm_struct *mm)
-{
-  char *p = NULL;
-  if (mm) {
-    down_read(&mm->mmap_sem);
-    if (mm->exe_file) {
-      char *pathname = kzalloc(PATH_MAX, GFP_ATOMIC);
-      if (pathname) {
-        p = d_path(&mm->exe_file->f_path, pathname, PATH_MAX);
-      }
-    }
-    up_read(&mm->mmap_sem);
-  }
-  return p;
-}
-
 void dump_profile_result(void)
 {
 	struct task_struct* master_thread = current;
 	struct task_struct* task = master_thread;
 	int i = 0;
+  int cpu_counts = num_online_cpus();
 
   // dump path 
   char *p = get_exe_path(current->active_mm);
@@ -256,24 +279,19 @@ void dump_profile_result(void)
   struct file_write_data* fw_data = NULL;
   if (p)
   {
-    char *dump_path = kzalloc(PATH_MAX, GFP_ATOMIC);
-    if (dump_path)
+    fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
+    if (fw_data)
     {
-      strcpy(dump_path, p);
+      strcpy(fw_data->dump_path, p);
       // make exe_dump as result file 
-      strcat(dump_path, ".dump");
-      printk(KERN_ALERT "%s open \n", dump_path);
-      fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
-      if (fw_data)
-      {
-        fw_data->file = file_open(dump_path, O_WRONLY | O_CREAT | O_TRUNC , 0644);
-        if (fw_data->file == NULL)
-          printk(KERN_ALERT "%s open failed\n",dump_path);
-      }
+      strcat(fw_data->dump_path, ".dump");
+      printk(KERN_ALERT "%s open \n", fw_data->dump_path);
+      fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
+      if (fw_data->file == NULL)
+        printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
     }
   }
 
-  int cpu_counts = num_online_cpus();
   do {
 		int j = 0;
     print_log(fw_data, "thread: %d\n", i);

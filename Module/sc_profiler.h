@@ -76,7 +76,9 @@ int file_sync(struct file* file);
 struct file_write_data
 {
   struct file* file;
-  int offset;
+  unsigned long long offset;
+  unsigned long long file_number;
+  char dump_path[PATH_MAX];
 };
 void print_log(struct file_write_data* fw_data, const char *fmt, ...);
 
