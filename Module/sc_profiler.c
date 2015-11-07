@@ -123,13 +123,12 @@ void print_log(struct file_write_data* fw_data, const char *fmt, ...)
   {
     va_start(args, fmt);
     i = vsnprintf(buf, 256, fmt, args);
-    if (fw_data->file == NULL)
+    if (fw_data == NULL || fw_data->file == NULL)
     {
       printk(KERN_ALERT "%s", buf);
     }
     else
     {
-      //FIXME
       // write to file log.
       // have to consider what offset which file ends is. 
       fw_data->offset += file_write(fw_data->file, fw_data->offset, buf, i);
@@ -254,9 +253,7 @@ void dump_profile_result(void)
   char *p = get_exe_path(current->active_mm);
   
   // initialize write data structure
-  struct file_write_data fw_data;
-  fw_data.file = NULL;
-  fw_data.offset = 0;
+  struct file_write_data* fw_data = NULL;
   if (p)
   {
     char *dump_path = kzalloc(PATH_MAX, GFP_ATOMIC);
@@ -266,27 +263,31 @@ void dump_profile_result(void)
       // make exe_dump as result file 
       strcat(dump_path, ".dump");
       printk(KERN_ALERT "%s open \n", dump_path);
-      fw_data.file = file_open(dump_path, O_WRONLY | O_CREAT | O_TRUNC , 0644);
-      if (fw_data.file == NULL)
-        printk(KERN_ALERT "%s open failed\n",dump_path);
+      fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
+      if (fw_data)
+      {
+        fw_data->file = file_open(dump_path, O_WRONLY | O_CREAT | O_TRUNC , 0644);
+        if (fw_data->file == NULL)
+          printk(KERN_ALERT "%s open failed\n",dump_path);
+      }
     }
   }
 
   do {
 		int j = 0;
-    print_log(&fw_data, "thread: %d\n", i);
+    print_log(fw_data, "thread: %d\n", i);
     
     for (j = 0; j < num_online_cpus(); j++)
     {
       int base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
-      print_log(&fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
+      print_log(fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
           j, 
           task->profile_data.cpu_data[j].initial_state,
           task->profile_data.cpu_data[j].list_counts);
-      print_log(&fw_data, ">>>> resume_cnt: %d suspend_cnt: %d\n",
+      print_log(fw_data, ">>>> resume_cnt: %d suspend_cnt: %d\n",
             base_number + task->profile_data.cpu_data[j].head->resume_counts, 
             base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
-      print_taskprofile_list(&fw_data, task->profile_data.cpu_data[j].head);
+      print_taskprofile_list(fw_data, task->profile_data.cpu_data[j].head);
     }
 
 		task = next_thread(task);
@@ -294,11 +295,15 @@ void dump_profile_result(void)
 
 	} while (task != master_thread);
 
-  if (fw_data.file)
+  if (fw_data)
   {
-    printk(KERN_ALERT "dump file closing..\n");
-    file_sync(fw_data.file);
-    file_close(fw_data.file);
+    if (fw_data->file)
+    {
+      printk(KERN_ALERT "dump file closing..\n");
+      file_sync(fw_data->file);
+      file_close(fw_data->file);
+    }
+    kfree(fw_data);
   }
 
 	return;
