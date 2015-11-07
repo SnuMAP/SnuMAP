@@ -273,11 +273,12 @@ void dump_profile_result(void)
     }
   }
 
+  int cpu_counts = num_online_cpus();
   do {
 		int j = 0;
     print_log(fw_data, "thread: %d\n", i);
     
-    for (j = 0; j < num_online_cpus(); j++)
+    for (j = 0; j < cpu_counts; j++)
     {
       int base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
       print_log(fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
