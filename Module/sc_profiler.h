@@ -73,6 +73,13 @@ int file_read(struct file* file, unsigned long long offset, unsigned char* data,
 int file_write(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size);
 int file_sync(struct file* file);
 
+struct file_write_data
+{
+  struct file* file;
+  int offset;
+};
+void print_log(struct file_write_data* fw_data, const char *fmt, ...);
+
 // ioctl definition
 #define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
 #define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
@@ -105,9 +112,6 @@ static ssize_t profiler_write(struct file *file,
                               const char __user *buffer,
                               size_t length,
                               loff_t *offset);
-
-/* helper functions implementation */
-int print_taskprofile_list(struct taskprofile_list* tp_current);
 
 /* basic functionalities implementation */
 void start_profiling(void);

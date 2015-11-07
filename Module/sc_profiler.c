@@ -113,6 +113,31 @@ int file_sync(struct file* file)
   vfs_fsync(file, 0);
   return 0;
 }
+void print_log(struct file_write_data* fw_data, const char *fmt, ...)
+{
+  va_list args;
+  int i;
+  char* buf = kzalloc(256, GFP_ATOMIC);
+  
+  if (buf)
+  {
+    va_start(args, fmt);
+    i = vsnprintf(buf, 256, fmt, args);
+    if (fw_data->file == NULL)
+    {
+      printk(KERN_ALERT "%s", buf);
+    }
+    else
+    {
+      //FIXME
+      // write to file log.
+      // have to consider what offset which file ends is. 
+      fw_data->offset += file_write(fw_data->file, fw_data->offset, buf, i);
+    }
+    va_end(args);
+    kfree(buf);
+  }
+}
 
 void start_profiling(void)
 {
@@ -165,17 +190,17 @@ void stop_profiling(void)
 	} while (task != master_thread);
 }
 
-int print_taskprofile_list(struct taskprofile_list *tp_current)
+int print_taskprofile_list(struct file_write_data* fw_data, struct taskprofile_list *tp_current)
 {
   int i = 0;
   int list_number = 0;
   int base_number = 0;
   if (tp_current == NULL) return 0;
-  else list_number = print_taskprofile_list(tp_current->next);
+  else list_number = print_taskprofile_list(fw_data, tp_current->next);
 
   base_number = list_number * MAX_TIME_COUNT;
   for (i = 0; i < tp_current->resume_counts; i++) {
-    printk(KERN_ALERT ">>>>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
+    print_log(fw_data, ">>>>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
         base_number + i, 
         tp_current->resume_time[i], 
         tp_current->suspend_time[i]);
@@ -194,14 +219,22 @@ char * strcat(char *dest, const char *src)
   return dest;
 }
 
-// FIXME
-// I think it causes kernel panic.
-char* get_exe_path(struct mm_struct *mm, char* pathname)
+char * strcpy(char *dest, const char *src)
+{
+  int i;
+  for (i=0; src[i] != '\0'; i++)
+    dest[i] = src[i];
+  dest[i] = '\0';
+  return dest;
+}
+
+char* get_exe_path(struct mm_struct *mm)
 {
   char *p = NULL;
   if (mm) {
     down_read(&mm->mmap_sem);
     if (mm->exe_file) {
+      char *pathname = kzalloc(PATH_MAX, GFP_ATOMIC);
       if (pathname) {
         p = d_path(&mm->exe_file->f_path, pathname, PATH_MAX);
       }
@@ -218,49 +251,42 @@ void dump_profile_result(void)
 	int i = 0;
 
   // dump path 
-  struct file *fs = NULL;
-//  char *pathname = kzalloc(PATH_MAX, GFP_KERNEL);
-//  if (pathname)
-//  {
-//    char *p = get_exe_path(current->active_mm, pathname);
-//    if (p)
-//    {
-//      strcat(p, ".dump"); // make exe_dump as result file 
-//      fs = file_open(p, O_WRONLY | O_CREAT, 0644);
-//      if (fs == NULL)
-//      {
-//        printk(KERN_ALERT "%s open failed\n",p);
-
-          // FIXME
-          // cannot open due to access deny, I guess.
-          fs = file_open("/var/log/sc_profiler.log", O_WRONLY | O_CREAT, 0644);
-          if (fs == NULL)
-          {
-//            fs = file_open("/home/urop/sc_profiler.log", O_WRONLY | O_CREAT, 0644);
-//            if (fs == NULL)
-              printk(KERN_ALERT "dump_profile_result failed with file_open failure.\n");
-          }
-//      }
-//    }
-//    kfree(pathname);
-//  }
+  char *p = get_exe_path(current->active_mm);
+  
+  // initialize write data structure
+  struct file_write_data fw_data;
+  fw_data.file = NULL;
+  fw_data.offset = 0;
+  if (p)
+  {
+    char *dump_path = kzalloc(PATH_MAX, GFP_ATOMIC);
+    if (dump_path)
+    {
+      strcpy(dump_path, p);
+      // make exe_dump as result file 
+      strcat(dump_path, ".dump");
+      printk(KERN_ALERT "%s open \n", dump_path);
+      fw_data.file = file_open(dump_path, O_WRONLY | O_CREAT | O_TRUNC , 0644);
+      if (fw_data.file == NULL)
+        printk(KERN_ALERT "%s open failed\n",dump_path);
+    }
+  }
 
   do {
 		int j = 0;
-
-		printk(KERN_ALERT "thread: %d\n", i);
+    print_log(&fw_data, "thread: %d\n", i);
     
     for (j = 0; j < num_online_cpus(); j++)
     {
       int base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
-      printk(KERN_ALERT ">> cpu: %d initial_state: %d list_counts: %d\n", 
+      print_log(&fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
           j, 
           task->profile_data.cpu_data[j].initial_state,
           task->profile_data.cpu_data[j].list_counts);
-      printk(KERN_ALERT ">>>> resume_cnt: %d suspend_cnt: %d\n",
+      print_log(&fw_data, ">>>> resume_cnt: %d suspend_cnt: %d\n",
             base_number + task->profile_data.cpu_data[j].head->resume_counts, 
             base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
-      print_taskprofile_list(task->profile_data.cpu_data[j].head);
+      print_taskprofile_list(&fw_data, task->profile_data.cpu_data[j].head);
     }
 
 		task = next_thread(task);
@@ -268,12 +294,11 @@ void dump_profile_result(void)
 
 	} while (task != master_thread);
 
-
-  if (fs)
+  if (fw_data.file)
   {
     printk(KERN_ALERT "dump file closing..\n");
-    file_sync(fs);
-    file_close(fs);
+    file_sync(fw_data.file);
+    file_close(fw_data.file);
   }
 
 	return;
