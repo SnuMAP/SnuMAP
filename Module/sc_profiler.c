@@ -179,19 +179,14 @@ void print_log(struct file_write_data* fw_data, const char *fmt, ...)
   {
     va_start(args, fmt);
     i = vsnprintf(buf, 256, fmt, args);
-    if (fw_data == NULL)
+    if (fw_data == NULL || fw_data->file == NULL)
     {
-      printk(KERN_ALERT "%s", buf);
-    }
-    else if(fw_data->file == NULL)
-    {
-      printk(KERN_ALERT "file open failed . %s", buf);
+      printk(KERN_ALERT "dump file open failed. %s", buf);
     }
     else
     {
       // write to file log.
       // have to consider what offset which file ends is. 
-      printk(KERN_ALERT "test for . %s", buf);
 
       // handle over uulong size. 
       // add file name postfix number.
@@ -225,7 +220,7 @@ void start_profiling(void)
     {
       int i = 0;
       int cpu_counts = num_online_cpus();
-      printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); // Test code. 
+      //printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); // Test code. 
       task->profile_data.cpu_data
         = kzalloc(sizeof(struct taskprofile_cpu_data) * cpu_counts, GFP_KERNEL);
       // initialize memory.
@@ -285,7 +280,7 @@ void dump_profile_result(void)
       strcpy(fw_data->dump_path, p);
       // make exe_dump as result file 
       strcat(fw_data->dump_path, ".dump");
-      printk(KERN_ALERT "%s open \n", fw_data->dump_path);
+      //printk(KERN_ALERT "%s open \n", fw_data->dump_path);
       fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
       if (fw_data->file == NULL)
         printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
@@ -301,7 +296,7 @@ void dump_profile_result(void)
       int base_number = 0;
       if (task->profile_data.cpu_data == NULL)
       {
-        printk(KERN_ALERT "cpu counts %d %p\n", j, task->profile_data.cpu_data);
+        printk(KERN_ALERT "[WARN] cpu_data is NULL when dump_profile_result - cpu counts %d %p\n", j, task->profile_data.cpu_data);
         continue;
       }
       base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
@@ -324,7 +319,7 @@ void dump_profile_result(void)
   {
     if (fw_data->file)
     {
-      printk(KERN_ALERT "dump file closing..\n");
+//      printk(KERN_ALERT "dump file closing..\n");
       file_sync(fw_data->file);
       file_close(fw_data->file);
     }
