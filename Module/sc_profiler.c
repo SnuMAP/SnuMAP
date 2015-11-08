@@ -225,7 +225,7 @@ void start_profiling(void)
     {
       int i = 0;
       int cpu_counts = num_online_cpus();
-      //printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); // Test code. 
+      printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); // Test code. 
       task->profile_data.cpu_data
         = kzalloc(sizeof(struct taskprofile_cpu_data) * cpu_counts, GFP_KERNEL);
       // initialize memory.
@@ -298,7 +298,13 @@ void dump_profile_result(void)
     
     for (j = 0; j < cpu_counts; j++)
     {
-      int base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
+      int base_number = 0;
+      if (task->profile_data.cpu_data == NULL)
+      {
+        printk(KERN_ALERT "cpu counts %d %p\n", j, task->profile_data.cpu_data);
+        continue;
+      }
+      base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
       print_log(fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
           j, 
           task->profile_data.cpu_data[j].initial_state,
