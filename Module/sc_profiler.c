@@ -24,18 +24,21 @@
 #include "sc_profiler.h"
 
 // Helper Functions
-int print_taskprofile_list(struct file_write_data* fw_data, struct taskprofile_list *tp_current)
+int print_taskprofile_list(struct file_write_data* fw_data, int initial_state, int thread_number, int cpu_number, struct taskprofile_list *tp_current)
 {
   int i = 0;
   int list_number = 0;
-  int base_number = 0;
+//  int base_number = 0;
   if (tp_current == NULL) return 0;
-  else list_number = print_taskprofile_list(fw_data, tp_current->next);
+  else list_number = print_taskprofile_list(fw_data, initial_state, thread_number, cpu_number, tp_current->next);
 
-  base_number = list_number * MAX_TIME_COUNT;
-  for (i = 0; i < tp_current->resume_counts; i++) {
-    print_log(fw_data, ">>>>>> cnt: %d resume_time: %lu suspend_time: %lu\n",
-        base_number + i, 
+//  base_number = list_number * MAX_TIME_COUNT;
+
+  // list_number == 0 : find first list && initial_state < 0 : ignore first time value
+  for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->resume_counts; i++) {
+    print_log(fw_data, "%d, %d, %llu, %llu\n",
+        thread_number,
+        cpu_number,
         tp_current->resume_time[i], 
         tp_current->suspend_time[i]);
   }
@@ -279,7 +282,7 @@ void dump_profile_result(void)
     {
       strcpy(fw_data->dump_path, p);
       // make exe_dump as result file 
-      strcat(fw_data->dump_path, ".dump");
+      strcat(fw_data->dump_path, ".csv");
       //printk(KERN_ALERT "%s open \n", fw_data->dump_path);
       fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
       if (fw_data->file == NULL)
@@ -287,27 +290,28 @@ void dump_profile_result(void)
     }
   }
 
+  print_log(fw_data, "thread_number, cpu_number, start_time, end_time\n");
   do {
 		int j = 0;
-    print_log(fw_data, "thread: %d\n", i);
+    //print_log(fw_data, "thread: %d\n", i);
     
     for (j = 0; j < cpu_counts; j++)
     {
-      int base_number = 0;
+      //int base_number = 0;
       if (task->profile_data.cpu_data == NULL)
       {
         printk(KERN_ALERT "[WARN] cpu_data is NULL when dump_profile_result - cpu counts %d %p\n", j, task->profile_data.cpu_data);
         continue;
       }
-      base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
-      print_log(fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
-          j, 
-          task->profile_data.cpu_data[j].initial_state,
-          task->profile_data.cpu_data[j].list_counts);
-      print_log(fw_data, ">>>> resume_cnt: %d suspend_cnt: %d\n",
-            base_number + task->profile_data.cpu_data[j].head->resume_counts, 
-            base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
-      print_taskprofile_list(fw_data, task->profile_data.cpu_data[j].head);
+      //base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
+      //print_log(fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
+      //    j, 
+      //    task->profile_data.cpu_data[j].initial_state,
+      //    task->profile_data.cpu_data[j].list_counts);
+      //print_log(fw_data, ">>>> resume_cnt: %d suspend_cnt: %d\n",
+      //      base_number + task->profile_data.cpu_data[j].head->resume_counts, 
+      //      base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
+      print_taskprofile_list(fw_data, task->profile_data.cpu_data[j].initial_state, i, j, task->profile_data.cpu_data[j].head);
     }
 
 		task = next_thread(task);
