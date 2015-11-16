@@ -1,0 +1,7 @@
+/dev/sda1               /                       ext4    defaults        1 1
+#/dev/sda3               /home                   ext4    defaults        1 2
+#/dev/sda2               swap                    swap    defaults        0 0
+tmpfs                   /dev/shm                tmpfs   mode=1777       0 0
+devpts                  /dev/pts                devpts  gid=5,mode=620  0 0
+sysfs                   /sys                    sysfs   defaults        0 0
+proc                    /proc                   proc    defaults        0 0

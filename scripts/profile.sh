@@ -1,0 +1,15 @@
+$TILERA_ROOT/bin/tile-monitor --resume \
+--upload /home/younghyun/src/examples/tilegx/fft/fft_1024 /bin/fft_1024 \
+--profile-init \
+--profile-kernel \
+--profile-reset \
+--profile-events '--event=ONE:12000000 --event=INSTRUCTION_BUNDLE:12000000 --event=LOAD_STALL:12000000 --event=INSTRUCTION_STALL:12000000' \
+--profile-flags '--callgraph=20' \
+--profile-start \
+--run -+- /bin/matrix -+- \
+--profile-stop \
+--profile-dump \
+--profile-capture samples \
+--profile-analyze samples \
+--profile-shutdown \
+--quit

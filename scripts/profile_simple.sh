@@ -1,0 +1,14 @@
+$TILERA_ROOT/bin/tile-monitor --resume \
+--upload /home/younghyun/src/examples/getting_started/hello_world/hello_world /bin/hello_world \
+--profile-init --profile-kernel \
+--profile-reset \
+--profile-events '--event=ONE:12000000 --event=INSTRUCTION_BUNDLE:12000000 --event=LOAD_STALL:12000000 --event=INSTRUCTION_STALL:12000000' \
+--profile-flags '--callgraph=20' \
+--profile-start \
+--run -+- /bin/hello_world -+- \
+--profile-stop \
+--profile-dump \
+--profile-capture samples \
+--profile-analyze samples \
+--profile-shutdown \
+--quit
