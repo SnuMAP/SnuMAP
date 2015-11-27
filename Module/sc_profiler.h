@@ -75,10 +75,10 @@ int file_sync(struct file* file);
 
 struct file_write_data
 {
-  struct file* file;
-  unsigned long long offset;
-  unsigned long long file_number;
-  char dump_path[PATH_MAX];
+	struct file* file;
+	unsigned long long offset;
+	unsigned long long file_number;
+	char dump_path[PATH_MAX];
 };
 void print_log(struct file_write_data* fw_data, const char *fmt, ...);
 
@@ -107,13 +107,13 @@ static int profiler_opened = 0;
 static int     profiler_open(struct inode *inode, struct file *file);
 static int     profiler_release(struct inode *inode, struct file *file);
 static ssize_t profiler_read(struct file *file,
-                             char __user *buffer,
-                             size_t length,
-                             loff_t *offset);
+		char __user *buffer,
+		size_t length,
+		loff_t *offset);
 static ssize_t profiler_write(struct file *file,
-                              const char __user *buffer,
-                              size_t length,
-                              loff_t *offset);
+		const char __user *buffer,
+		size_t length,
+		loff_t *offset);
 
 /* basic functionalities implementation */
 void start_profiling(void);
@@ -126,8 +126,8 @@ void module_end(void);
 
 #ifdef UNLOCKED
 long profiler_ioctl(struct file *file,
-                   unsigned int ioctl_num,
-                   unsigned long ioctl_param);
+		unsigned int ioctl_num,
+		unsigned long ioctl_param);
 
 /* Module Declarations */
 /*
@@ -136,18 +136,18 @@ long profiler_ioctl(struct file *file,
  * ...
  */
 struct file_operations Fops = {
-  .read  = profiler_read,
-  .write = profiler_write,
-  .unlocked_ioctl = profiler_ioctl,
-  .open  = profiler_open,
-  .release = profiler_release, /* a.k.a. close */
+	.read  = profiler_read,
+	.write = profiler_write,
+	.unlocked_ioctl = profiler_ioctl,
+	.open  = profiler_open,
+	.release = profiler_release, /* a.k.a. close */
 };
 
 #else
 int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
-                   struct file *file,
-                   unsigned int ioctl_num,
-                   unsigned long ioctl_param);
+		struct file *file,
+		unsigned int ioctl_num,
+		unsigned long ioctl_param);
 
 /* Module Declarations */
 /*
@@ -156,11 +156,11 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
  * ...
  */
 struct file_operations Fops = {
-  .read  = profiler_read,
-  .write = profiler_write,
-  .ioctl = profiler_ioctl,
-  .open  = profiler_open,
-  .release = profiler_release, /* a.k.a. close */
+	.read  = profiler_read,
+	.write = profiler_write,
+	.ioctl = profiler_ioctl,
+	.open  = profiler_open,
+	.release = profiler_release, /* a.k.a. close */
 };
 
 #endif
