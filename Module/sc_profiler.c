@@ -26,60 +26,56 @@
 // Helper Functions
 int print_taskprofile_list(struct file_write_data* fw_data, int initial_state, int thread_number, int cpu_number, struct taskprofile_list *tp_current)
 {
-  int i = 0;
-  int list_number = 0;
-//  int base_number = 0;
-  if (tp_current == NULL) return 0;
-  else list_number = print_taskprofile_list(fw_data, initial_state, thread_number, cpu_number, tp_current->next);
+	int i = 0;
+	int list_number = 0;
+	if (tp_current == NULL) return 0;
+	else list_number = print_taskprofile_list(fw_data, initial_state, thread_number, cpu_number, tp_current->next);
 
-//  base_number = list_number * MAX_TIME_COUNT;
-
-  // list_number == 0 : find first list && initial_state < 0 : ignore first time value
-  for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->resume_counts; i++) {
-    print_log(fw_data, "%d, %d, %llu, %llu, %llu\n",
-        thread_number,
-        cpu_number,
-        tp_current->suspend_time[i]-tp_current->resume_time[i],
-        tp_current->resume_time[i], 
-        tp_current->suspend_time[i]);
-  }
-  return ++list_number;
+	for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->resume_counts; i++) {
+		print_log(fw_data, "%d, %d, %llu, %llu, %llu\n",
+				thread_number,
+				cpu_number,
+				tp_current->suspend_time[i]-tp_current->resume_time[i],
+				tp_current->resume_time[i], 
+				tp_current->suspend_time[i]);
+	}
+	return ++list_number;
 }
 
 char * strcat(char *dest, const char *src)
 {
-  int i,j;
-  for (i = 0; dest[i] != '\0'; i++)
-    ;
-  for (j = 0; src[j] != '\0'; j++)
-    dest[i+j] = src[j];
-  dest[i+j] = '\0';
-  return dest;
+	int i,j;
+	for (i = 0; dest[i] != '\0'; i++)
+		;
+	for (j = 0; src[j] != '\0'; j++)
+		dest[i+j] = src[j];
+	dest[i+j] = '\0';
+	return dest;
 }
 
 char * strcpy(char *dest, const char *src)
 {
-  int i;
-  for (i=0; src[i] != '\0'; i++)
-    dest[i] = src[i];
-  dest[i] = '\0';
-  return dest;
+	int i;
+	for (i=0; src[i] != '\0'; i++)
+		dest[i] = src[i];
+	dest[i] = '\0';
+	return dest;
 }
 
 char* get_exe_path(struct mm_struct *mm)
 {
-  char *p = NULL;
-  if (mm) {
-    down_read(&mm->mmap_sem);
-    if (mm->exe_file) {
-      char *pathname = kzalloc(PATH_MAX, GFP_ATOMIC);
-      if (pathname) {
-        p = d_path(&mm->exe_file->f_path, pathname, PATH_MAX);
-      }
-    }
-    up_read(&mm->mmap_sem);
-  }
-  return p;
+	char *p = NULL;
+	if (mm) {
+		down_read(&mm->mmap_sem);
+		if (mm->exe_file) {
+			char *pathname = kzalloc(PATH_MAX, GFP_ATOMIC);
+			if (pathname) {
+				p = d_path(&mm->exe_file->f_path, pathname, PATH_MAX);
+			}
+		}
+		up_read(&mm->mmap_sem);
+	}
+	return p;
 }
 
 
@@ -123,94 +119,94 @@ static ssize_t profiler_write(struct file *file,
 // file operation
 struct file* file_open(const char* path, int flags, int rights)
 {
-  struct file* filp = NULL;
-  mm_segment_t oldfs;
-  int err = 0;
+	struct file* filp = NULL;
+	mm_segment_t oldfs;
+	int err = 0;
 
-  oldfs = get_fs();
-  set_fs(get_ds());
-  filp = filp_open(path, flags, rights);
-  set_fs(oldfs);
-  if(IS_ERR(filp)) {
-    err = PTR_ERR(filp);
-    printk(KERN_ALERT "file_open returns NULL with flip error\n");
-    return NULL;
-  }
-  return filp;
+	oldfs = get_fs();
+	set_fs(get_ds());
+	filp = filp_open(path, flags, rights);
+	set_fs(oldfs);
+	if(IS_ERR(filp)) {
+		err = PTR_ERR(filp);
+		printk(KERN_ALERT "file_open returns NULL with flip error\n");
+		return NULL;
+	}
+	return filp;
 }
 void file_close(struct file* file)
 {
-  filp_close(file, NULL);
+	filp_close(file, NULL);
 }
 int file_read(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size)
 {
-  mm_segment_t oldfs;
-  int ret;
+	mm_segment_t oldfs;
+	int ret;
 
-  oldfs = get_fs();
-  set_fs(get_ds());
+	oldfs = get_fs();
+	set_fs(get_ds());
 
-  ret = vfs_read(file, data, size, &offset);
+	ret = vfs_read(file, data, size, &offset);
 
-  set_fs(oldfs);
-  return ret;
+	set_fs(oldfs);
+	return ret;
 }
 int file_write(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size)
 {
-  mm_segment_t oldfs;
-  int ret;
+	mm_segment_t oldfs;
+	int ret;
 
-  oldfs = get_fs();
-  set_fs(get_ds());
+	oldfs = get_fs();
+	set_fs(get_ds());
 
-  ret = vfs_write(file, data, size, &offset);
+	ret = vfs_write(file, data, size, &offset);
 
-  set_fs(oldfs);
-  return ret;
+	set_fs(oldfs);
+	return ret;
 }
 int file_sync(struct file* file)
 {
-  vfs_fsync(file, 0);
-  return 0;
+	vfs_fsync(file, 0);
+	return 0;
 }
 void print_log(struct file_write_data* fw_data, const char *fmt, ...)
 {
-  va_list args;
-  int i;
-  char* buf = kzalloc(256, GFP_ATOMIC);
-  
-  if (buf)
-  {
-    va_start(args, fmt);
-    i = vsnprintf(buf, 256, fmt, args);
-    if (fw_data == NULL || fw_data->file == NULL)
-    {
-      printk(KERN_ALERT "dump file open failed. %s", buf);
-    }
-    else
-    {
-      // write to file log.
-      // have to consider what offset which file ends is. 
+	va_list args;
+	int i;
+	char* buf = kzalloc(256, GFP_ATOMIC);
 
-      // handle over uulong size. 
-      // add file name postfix number.
-      if (fw_data->offset + i >= ULLONG_MAX)
-      {
-        const char c = '0'+fw_data->file_number++;
-        file_sync(fw_data->file);
-        file_close(fw_data->file);
-        fw_data->file = NULL;
-        fw_data->offset = 0;
-        strcat(fw_data->dump_path, &c);
-        fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
-        if (fw_data->file == NULL)
-          printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
-      }
-      fw_data->offset += file_write(fw_data->file, fw_data->offset, buf, i);
-    }
-    va_end(args);
-    kfree(buf);
-  }
+	if (buf)
+	{
+		va_start(args, fmt);
+		i = vsnprintf(buf, 256, fmt, args);
+		if (fw_data == NULL || fw_data->file == NULL)
+		{
+			printk(KERN_ALERT "dump file open failed. %s", buf);
+		}
+		else
+		{
+			// write to file log.
+			// have to consider what offset which file ends is. 
+
+			// handle over uulong size. 
+			// add file name postfix number.
+			if (fw_data->offset + i >= ULLONG_MAX)
+			{
+				const char c = '0'+fw_data->file_number++;
+				file_sync(fw_data->file);
+				file_close(fw_data->file);
+				fw_data->file = NULL;
+				fw_data->offset = 0;
+				strcat(fw_data->dump_path, &c);
+				fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
+				if (fw_data->file == NULL)
+					printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
+			}
+			fw_data->offset += file_write(fw_data->file, fw_data->offset, buf, i);
+		}
+		va_end(args);
+		kfree(buf);
+	}
 }
 
 void start_profiling(void)
@@ -219,35 +215,35 @@ void start_profiling(void)
 	struct task_struct* task = master_thread;
 
 	do {
-    // allocate memory
-    if (task->profile_data.cpu_data == NULL)
-    {
-      int i = 0;
-      int cpu_counts = num_online_cpus();
-      //printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); // Test code. 
-      task->profile_data.cpu_data
-        = kzalloc(sizeof(struct taskprofile_cpu_data) * cpu_counts, GFP_KERNEL);
-      // initialize memory.
-      for (i = 0; i < cpu_counts; i++)
-      {
-        task->profile_data.cpu_data[i].initial_state = 0;
-        task->profile_data.cpu_data[i].head
-          = kzalloc (sizeof(struct taskprofile_list), GFP_KERNEL);
-        task->profile_data.cpu_data[i].list_counts = 1;
+		// allocate memory
+		if (task->profile_data.cpu_data == NULL)
+		{
+			int i = 0;
+			int cpu_counts = num_online_cpus();
+			//printk(KERN_ALERT "start_profiling : cpu count: %d\n", cpu_counts); // Test code. 
+			task->profile_data.cpu_data
+				= kzalloc(sizeof(struct taskprofile_cpu_data) * cpu_counts, GFP_KERNEL);
+			// initialize memory.
+			for (i = 0; i < cpu_counts; i++)
+			{
+				task->profile_data.cpu_data[i].initial_state = 0;
+				task->profile_data.cpu_data[i].head
+					= kzalloc (sizeof(struct taskprofile_list), GFP_KERNEL);
+				task->profile_data.cpu_data[i].list_counts = 1;
 
-        // time data allocation and initialization
-        task->profile_data.cpu_data[i].head->next = NULL;
-        task->profile_data.cpu_data[i].head->resume_counts = 0;
-        task->profile_data.cpu_data[i].head->suspend_counts = 0;
-        
-        task->profile_data.cpu_data[i].head->resume_time
-          = kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
-        task->profile_data.cpu_data[i].head->suspend_time
-          = kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
-      }
-    }
-    
-    task->profile_data.starting_flag = 1;
+				// time data allocation and initialization
+				task->profile_data.cpu_data[i].head->next = NULL;
+				task->profile_data.cpu_data[i].head->resume_counts = 0;
+				task->profile_data.cpu_data[i].head->suspend_counts = 0;
+
+				task->profile_data.cpu_data[i].head->resume_time
+					= kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
+				task->profile_data.cpu_data[i].head->suspend_time
+					= kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
+			}
+		}
+
+		task->profile_data.starting_flag = 1;
 
 		task = next_thread(task);
 	} while (task != master_thread);
@@ -269,67 +265,67 @@ void dump_profile_result(void)
 	struct task_struct* master_thread = current;
 	struct task_struct* task = master_thread;
 	int i = 0;
-  int cpu_counts = num_online_cpus();
+	int cpu_counts = num_online_cpus();
 
-  // dump path 
-  char *p = get_exe_path(current->active_mm);
-  
-  // initialize write data structure
-  struct file_write_data* fw_data = NULL;
-  if (p)
-  {
-    fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
-    if (fw_data)
-    {
-      strcpy(fw_data->dump_path, p);
-      // make exe_dump as result file 
-      strcat(fw_data->dump_path, ".csv");
-      //printk(KERN_ALERT "%s open \n", fw_data->dump_path);
-      fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
-      if (fw_data->file == NULL)
-        printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
-    }
-  }
+	// dump path 
+	char *p = get_exe_path(current->active_mm);
 
-  print_log(fw_data, "thread_number, cpu_number, execution_time, start_time, end_time\n");
-  do {
+	// initialize write data structure
+	struct file_write_data* fw_data = NULL;
+	if (p)
+	{
+		fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
+		if (fw_data)
+		{
+			strcpy(fw_data->dump_path, p);
+			// make exe_dump as result file 
+			strcat(fw_data->dump_path, ".csv");
+			//printk(KERN_ALERT "%s open \n", fw_data->dump_path);
+			fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
+			if (fw_data->file == NULL)
+				printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
+		}
+	}
+
+	print_log(fw_data, "thread_number, cpu_number, execution_time, start_time, end_time\n");
+	do {
 		int j = 0;
-    //print_log(fw_data, "thread: %d\n", i);
-    
-    for (j = 0; j < cpu_counts; j++)
-    {
-      //int base_number = 0;
-      if (task->profile_data.cpu_data == NULL)
-      {
-        printk(KERN_ALERT "[WARN] cpu_data is NULL when dump_profile_result - cpu counts %d %p\n", j, task->profile_data.cpu_data);
-        continue;
-      }
-      //base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
-      //print_log(fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
-      //    j, 
-      //    task->profile_data.cpu_data[j].initial_state,
-      //    task->profile_data.cpu_data[j].list_counts);
-      //print_log(fw_data, ">>>> resume_cnt: %d suspend_cnt: %d\n",
-      //      base_number + task->profile_data.cpu_data[j].head->resume_counts, 
-      //      base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
-      print_taskprofile_list(fw_data, task->profile_data.cpu_data[j].initial_state, i, j, task->profile_data.cpu_data[j].head);
-    }
+		//print_log(fw_data, "thread: %d\n", i);
+
+		for (j = 0; j < cpu_counts; j++)
+		{
+			//int base_number = 0;
+			if (task->profile_data.cpu_data == NULL)
+			{
+				printk(KERN_ALERT "[WARN] cpu_data is NULL when dump_profile_result - cpu counts %d %p\n", j, task->profile_data.cpu_data);
+				continue;
+			}
+			//base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
+			//print_log(fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
+			//    j, 
+			//    task->profile_data.cpu_data[j].initial_state,
+			//    task->profile_data.cpu_data[j].list_counts);
+			//print_log(fw_data, ">>>> resume_cnt: %d suspend_cnt: %d\n",
+			//      base_number + task->profile_data.cpu_data[j].head->resume_counts, 
+			//      base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
+			print_taskprofile_list(fw_data, task->profile_data.cpu_data[j].initial_state, i, j, task->profile_data.cpu_data[j].head);
+		}
 
 		task = next_thread(task);
 		i++;
 
 	} while (task != master_thread);
 
-  if (fw_data)
-  {
-    if (fw_data->file)
-    {
-//      printk(KERN_ALERT "dump file closing..\n");
-      file_sync(fw_data->file);
-      file_close(fw_data->file);
-    }
-    kfree(fw_data);
-  }
+	if (fw_data)
+	{
+		if (fw_data->file)
+		{
+			//      printk(KERN_ALERT "dump file closing..\n");
+			file_sync(fw_data->file);
+			file_close(fw_data->file);
+		}
+		kfree(fw_data);
+	}
 
 	return;
 }
@@ -348,33 +344,33 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 	int ret = 0;
 
 	switch (_IOC_NR(ioctl_num)) {
-    case _IOC_NR(IOCTL_START_PROFILING):
-		{
-			printk(KERN_ALERT "start_profiling called\n");
-			start_profiling();
+		case _IOC_NR(IOCTL_START_PROFILING):
+			{
+				printk(KERN_ALERT "start_profiling called\n");
+				start_profiling();
 
-			break;
-		}
-    case _IOC_NR(IOCTL_STOP_PROFILING):
-		{
-			printk(KERN_ALERT "stop_profiling called\n");
-			stop_profiling();
+				break;
+			}
+		case _IOC_NR(IOCTL_STOP_PROFILING):
+			{
+				printk(KERN_ALERT "stop_profiling called\n");
+				stop_profiling();
 
-			break;
-		}
-    case _IOC_NR(IOCTL_DUMP_PROFILED_RESULT):
-		{
-			printk(KERN_ALERT "dump_profiled_result called\n");
-			dump_profile_result();
+				break;
+			}
+		case _IOC_NR(IOCTL_DUMP_PROFILED_RESULT):
+			{
+				printk(KERN_ALERT "dump_profiled_result called\n");
+				dump_profile_result();
 
-			break;
-		}
+				break;
+			}
 		default:
-		{
-			printk(KERN_ALERT "no support ioctl command %d\n", ioctl_num);
+			{
+				printk(KERN_ALERT "no support ioctl command %d\n", ioctl_num);
 
-			break;
-		}
+				break;
+			}
 	}
 
 	return ret;
