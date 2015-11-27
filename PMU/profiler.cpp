@@ -44,6 +44,26 @@ CSimpleProfiler::CSimpleProfiler()
   _attr_type[2] = PER_CORE;
   _attr_type[3] = PER_CLUSTER;
 
+#elif defined(AMD32)
+  int num_events = 4;
+  _attr_mapping = (std::pair<__u32, __u64>*)
+    malloc(num_events * sizeof(std::pair<__u32, __u64>));
+
+  _attr_mapping[0] = std::make_pair<__u32, __u64>
+    (TOTAL_CYCLES_TYPE, TOTAL_CYCLES_CONFIG);
+  _attr_mapping[1] = std::make_pair<__u32, __u64>
+    (TOTAL_INSTRUCTIONS_TYPE, TOTAL_INSTRUCTIONS_CONFIG);
+  _attr_mapping[2] = std::make_pair<__u32, __u64>
+    (STALL_CYCLES_TYPE, STALL_CYCLES_CONFIG);
+  _attr_mapping[3] = std::make_pair<__u32, __u64>
+    (LLC_MISSES_TYPE, LLC_MISSES_CONFIG);
+
+  _attr_type = (event_type*)malloc(num_events * sizeof(event_type));
+  _attr_type[0] = PER_CORE;
+  _attr_type[1] = PER_CORE;
+  _attr_type[2] = PER_CORE;
+  _attr_type[3] = PER_CLUSTER;
+
 #elif defined(TILEGX36)
   int num_events = 5;
   _attr_mapping = (pair<__u32, __u64>*)
@@ -90,6 +110,9 @@ void CSimpleProfiler::StopProfiling()
 #if defined(AMD64)
   const int TOTAL_CYCLES = 0;
   const int LLC_MISSES = 3;
+#elif defined(AMD32)
+  const int TOTAL_CYCLES = 0;
+  const int LLC_MISSES = 3;
 #elif defined(TILEGX36)
   const int TOTAL_CYCLES = 0;
   const int LOCAL_DATA_READ_MISS = 1;
@@ -111,6 +134,16 @@ void CSimpleProfiler::StopProfiling()
     unsigned long llc_misses = 0;
 
 #if defined(AMD64)
+    if (_attr_type[LLC_MISSES] == PER_CLUSTER) {
+      int delegate_core = core - core % NUM_CORES_IN_CLUSTER;
+      llc_misses =
+        (_end.values[LLC_MISSES][delegate_core] -
+         _start.values[LLC_MISSES][delegate_core]);
+    } else {
+      llc_misses =
+        (_end.values[LLC_MISSES][core] - _start.values[LLC_MISSES][core]);
+    }
+#elif defined(AMD32)
     if (_attr_type[LLC_MISSES] == PER_CLUSTER) {
       int delegate_core = core - core % NUM_CORES_IN_CLUSTER;
       llc_misses =
