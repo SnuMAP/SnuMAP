@@ -25,7 +25,7 @@ void PeriodicSchedulerRoutine(CProfiler* profiler)
 {
   while (true) {
     /* periodically try to perform system-wide profiling */
-    usleep(100000); // 30 ms
+    usleep(1000); // 1ms - current default sampling duration
 
     /* stop the profiling: update profiling results */
     profiler->StopProfiling();

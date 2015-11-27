@@ -24,13 +24,17 @@
 ///
 /// @description currently we support two different platforms
 //TODO: define AMD32 and distinguish AMD32 and AMD64
-#if defined(__x86_64__)
-#define AMD64
-#elif defined(__tile__)
-#define TILEGX36
-#else
-#error PMU manager does not support this platform
-#endif
+//#if defined(__x86_64__)
+//#define AMD64
+//#elif defined(__tile__)
+//#define TILEGX36
+//#else
+//#error PMU manager does not support this platform
+//#endif
+
+//#define AMD64
+#define AMD32
+//#define TILEGX36
 
 /// @brief turn on/off PMU options
 ///
