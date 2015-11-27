@@ -28,17 +28,14 @@ int print_taskprofile_list(struct file_write_data* fw_data, int initial_state, i
 {
 	int i = 0;
 	int list_number = 0;
-	//  int base_number = 0;
 	if (tp_current == NULL) return 0;
 	else list_number = print_taskprofile_list(fw_data, initial_state, thread_number, cpu_number, tp_current->next);
 
-	//  base_number = list_number * MAX_TIME_COUNT;
-
-	// list_number == 0 : find first list && initial_state < 0 : ignore first time value
 	for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->resume_counts; i++) {
-		print_log(fw_data, "%d, %d, %llu, %llu\n",
+		print_log(fw_data, "%d, %d, %llu, %llu, %llu\n",
 				thread_number,
 				cpu_number,
+				tp_current->suspend_time[i]-tp_current->resume_time[i],
 				tp_current->resume_time[i], 
 				tp_current->suspend_time[i]);
 	}
@@ -290,7 +287,7 @@ void dump_profile_result(void)
 		}
 	}
 
-	print_log(fw_data, "thread_number, cpu_number, start_time, end_time\n");
+	print_log(fw_data, "thread_number, cpu_number, execution_time, start_time, end_time\n");
 	do {
 		int j = 0;
 		//print_log(fw_data, "thread: %d\n", i);
