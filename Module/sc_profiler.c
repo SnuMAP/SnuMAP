@@ -31,7 +31,7 @@ int print_taskprofile_list(struct file_write_data* fw_data, int initial_state, i
 	if (tp_current == NULL) return 0;
 	else list_number = print_taskprofile_list(fw_data, initial_state, thread_number, cpu_number, tp_current->next);
 
-	for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->resume_counts; i++) {
+	for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->suspend_counts; i++) {
 		print_log(fw_data, "%d, %d, %llu, %llu, %llu\n",
 				thread_number,
 				cpu_number,
