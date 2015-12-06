@@ -79,6 +79,7 @@ struct file_write_data
 	unsigned long long offset;
 	unsigned long long file_number;
 	char dump_path[PATH_MAX];
+    char file_name[PATH_MAX];
 };
 void print_log(struct file_write_data* fw_data, const char *fmt, ...);
 

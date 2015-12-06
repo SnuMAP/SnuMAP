@@ -32,12 +32,12 @@ int print_taskprofile_list(struct file_write_data* fw_data, int initial_state, i
 	else list_number = print_taskprofile_list(fw_data, initial_state, thread_number, cpu_number, tp_current->next);
 
 	for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->suspend_counts; i++) {
-		print_log(fw_data, "%d, %d, %llu, %llu, %llu\n",
-				thread_number,
+		print_log(fw_data, "%d\t%llu\t%llu\t%s\n",
 				cpu_number,
-				tp_current->suspend_time[i]-tp_current->resume_time[i],
 				tp_current->resume_time[i], 
-				tp_current->suspend_time[i]);
+				tp_current->suspend_time[i],
+                fw_data->file_name
+                );
 	}
 	return ++list_number;
 }
@@ -60,6 +60,23 @@ char * strcpy(char *dest, const char *src)
 		dest[i] = src[i];
 	dest[i] = '\0';
 	return dest;
+}
+
+char * strrchr(char *dest, const char *src, const char delim)
+{
+    int i,j;
+    j=0;
+    for (i=0; src[i] != '\0'; i++)
+    {
+        if (src[i] == delim)
+        {
+            j = 0;
+        }
+        else
+            dest[j++] = src[i]; 
+    }
+    dest[j] = '\0';
+    return dest;
 }
 
 char* get_exe_path(struct mm_struct *mm)
@@ -278,6 +295,7 @@ void dump_profile_result(void)
 		if (fw_data)
 		{
 			strcpy(fw_data->dump_path, p);
+            strrchr(fw_data->file_name, p, '/');
 			// make exe_dump as result file 
 			strcat(fw_data->dump_path, ".csv");
 			//printk(KERN_ALERT "%s open \n", fw_data->dump_path);
@@ -287,7 +305,7 @@ void dump_profile_result(void)
 		}
 	}
 
-	print_log(fw_data, "thread_number, cpu_number, execution_time, start_time, end_time\n");
+	//print_log(fw_data, "thread_number, cpu_number, execution_time, start_time, end_time\n");
 	do {
 		int j = 0;
 		//print_log(fw_data, "thread: %d\n", i);
