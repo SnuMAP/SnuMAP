@@ -295,7 +295,7 @@ void dump_profile_result(void)
 		if (fw_data)
 		{
 			_strcpy(fw_data->dump_path, p);
-			_strrchr_custom(fw_data->file_name, p, '/');
+			_strrchr(fw_data->file_name, p, '/');
 			// make exe_dump as result file 
 			_strcat(fw_data->dump_path, ".csv");
 			//printk(KERN_ALERT "%s open \n", fw_data->dump_path);
