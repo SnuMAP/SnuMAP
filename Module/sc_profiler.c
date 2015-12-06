@@ -36,13 +36,13 @@ int print_taskprofile_list(struct file_write_data* fw_data, int initial_state, i
 				cpu_number,
 				tp_current->resume_time[i], 
 				tp_current->suspend_time[i],
-                fw_data->file_name
-                );
+				fw_data->file_name
+			 );
 	}
 	return ++list_number;
 }
 
-char * strcat(char *dest, const char *src)
+char * _strcat(char *dest, const char *src)
 {
 	int i,j;
 	for (i = 0; dest[i] != '\0'; i++)
@@ -53,7 +53,7 @@ char * strcat(char *dest, const char *src)
 	return dest;
 }
 
-char * strcpy(char *dest, const char *src)
+char * _strcpy(char *dest, const char *src)
 {
 	int i;
 	for (i=0; src[i] != '\0'; i++)
@@ -62,21 +62,21 @@ char * strcpy(char *dest, const char *src)
 	return dest;
 }
 
-char * strrchr(char *dest, const char *src, const char delim)
+char * _strrchr(char *dest, const char *src, const char delim)
 {
-    int i,j;
-    j=0;
-    for (i=0; src[i] != '\0'; i++)
-    {
-        if (src[i] == delim)
-        {
-            j = 0;
-        }
-        else
-            dest[j++] = src[i]; 
-    }
-    dest[j] = '\0';
-    return dest;
+	int i,j;
+	j=0;
+	for (i=0; src[i] != '\0'; i++)
+	{
+		if (src[i] == delim)
+		{
+			j = 0;
+		}
+		else
+			dest[j++] = src[i]; 
+	}
+	dest[j] = '\0';
+	return dest;
 }
 
 char* get_exe_path(struct mm_struct *mm)
@@ -214,7 +214,7 @@ void print_log(struct file_write_data* fw_data, const char *fmt, ...)
 				file_close(fw_data->file);
 				fw_data->file = NULL;
 				fw_data->offset = 0;
-				strcat(fw_data->dump_path, &c);
+				_strcat(fw_data->dump_path, &c);
 				fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
 				if (fw_data->file == NULL)
 					printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
@@ -294,10 +294,10 @@ void dump_profile_result(void)
 		fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
 		if (fw_data)
 		{
-			strcpy(fw_data->dump_path, p);
-            strrchr(fw_data->file_name, p, '/');
+			_strcpy(fw_data->dump_path, p);
+			_strrchr_custom(fw_data->file_name, p, '/');
 			// make exe_dump as result file 
-			strcat(fw_data->dump_path, ".csv");
+			_strcat(fw_data->dump_path, ".csv");
 			//printk(KERN_ALERT "%s open \n", fw_data->dump_path);
 			fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
 			if (fw_data->file == NULL)
