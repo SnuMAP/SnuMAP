@@ -72,7 +72,8 @@ void PeriodicSchedulerRoutine(CProfiler* profiler)
 
   while (true) {
     /* periodically try to perform system-wide profiling */
-    usleep(1000); // 1ms - current default sampling duration
+    //usleep(1000); // 1ms - current default sampling duration
+    usleep(5000); // 5ms - current default sampling duration
 
     /* read jiffies */
     unsigned long jiffies = 0;
