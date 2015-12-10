@@ -21,6 +21,7 @@
 #include "common.h"
 #include "profiler.h"
 
+#include <fstream>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -29,8 +30,13 @@
 #define MAJOR_NUM 101
 #define IOCTL_GET_JIFFIES _IOR(MAJOR_NUM, 4, NULL)
 
+using namespace std;
+
 static int is_opened;
+static int is_file_dump;
 static int fd;
+
+ofstream out;
 
 void init_kernel_interface(void)
 {
@@ -60,12 +66,13 @@ void init_kernel_interface(void)
 
 void PeriodicSchedulerRoutine(CProfiler* profiler)
 {
+  CSimpleProfiler* profiler_ = dynamic_cast<CSimpleProfiler*>(profiler);
+  if (profiler_ == NULL)
+    return;
+
   while (true) {
     /* periodically try to perform system-wide profiling */
     usleep(1000); // 1ms - current default sampling duration
-
-    /* stop the profiling: update profiling results */
-    profiler->StopProfiling();
 
     /* read jiffies */
     unsigned long jiffies = 0;
@@ -75,9 +82,12 @@ void PeriodicSchedulerRoutine(CProfiler* profiler)
       }
     }
 
-    fprintf(stdout, "jiffies: %lu\n", jiffies);
-
-    /* do something */
+    /* stop the profiling: update profiling results */
+    if (is_file_dump && is_opened) {
+      profiler_->StopProfiling(jiffies, out);
+    } else {
+      profiler_->StopProfiling();
+    }
 
     /* start new profiling */
     profiler->StartProfiling();
@@ -89,6 +99,12 @@ int main(int argc, char *argv[])
   /* initialize kernel interface */
   init_kernel_interface();
 
+  /* prepare file i/o */
+  if (argv[1]) {
+    out.open(argv[1]);
+    is_file_dump = 1;
+  }
+
   /* profiler setting */
   CProfiler *profiler =
     //NULL;
@@ -99,6 +115,8 @@ int main(int argc, char *argv[])
   std::thread periodicScheduler(PeriodicSchedulerRoutine, profiler);
 
   periodicScheduler.join();
+
+  out.close();
 
   return 0;
 }
