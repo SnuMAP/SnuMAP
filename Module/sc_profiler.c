@@ -348,6 +348,12 @@ void dump_profile_result(void)
 	return;
 }
 
+unsigned long get_jiffies(void)
+{
+    unsigned long jiffies = get_jiffies_64();
+    return jiffies_to_usecs(jiffies);
+}
+
 #ifdef UNLOCKED
 long profiler_ioctl(struct file *file,
 		unsigned int ioctl_num,
@@ -383,6 +389,14 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 
 				break;
 			}
+        case _IOC_NR(IOCTL_GET_JIFFIES):
+            {
+                //printk(KERN_ALERT "get_jiffies called\n");
+                unsigned long jiffies = get_jiffies();
+                ret = copy_to_user((void*)arg, &jiffies, sizeof(unsigned long));
+
+                break;
+            }
 		default:
 			{
 				printk(KERN_ALERT "no support ioctl command %d\n", ioctl_num);

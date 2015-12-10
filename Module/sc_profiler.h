@@ -52,6 +52,8 @@
 #include <linux/slab.h>
 #include <linux/nodemask.h>
 
+#include <linux/jiffies.h>
+
 // for checking linux version (ioctl or unlocked_ioctl)
 #include <linux/version.h>
 
@@ -87,6 +89,7 @@ void print_log(struct file_write_data* fw_data, const char *fmt, ...);
 #define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
 #define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
 #define IOCTL_DUMP_PROFILED_RESULT _IOR(MAJOR_NUM, 3, NULL)
+#define IOCTL_GET_JIFFIES          _IOR(MAJOR_NUM, 4, NULL)
 
 #define DEVICE_FILE_NAME "profiler_mailbox"
 #define MAJOR_NUM 101
