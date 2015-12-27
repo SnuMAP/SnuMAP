@@ -348,7 +348,7 @@ void dump_profile_result(void)
 		fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
 		if (fw_data)
 		{
-			_parse_path(fw_data);
+			_parse_path(fw_data, p);
 			fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
 			if (fw_data->file == NULL)
 				printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
