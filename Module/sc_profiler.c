@@ -24,6 +24,21 @@
 #include "sc_profiler.h"
 
 // Helper Functions
+
+// print_taskprofile_list function
+// @param
+// fw_data: file write data structure (target file informations(name, offset, etc.))
+// initial_state: from saved profile data. it depends on task state when start profile. (suspend or resume.)
+// thread_number:
+// cpu_number:
+// tp_current: current profile data list. (for DFS)
+// @return
+// list entry count
+// @summary
+// print list data using DFS
+// @FIXME
+// you have to be carefule to write recursive function since stack size is limited in kernel.
+// iteration is more efficient.
 int print_taskprofile_list(struct file_write_data* fw_data, int initial_state, int thread_number, int cpu_number, struct taskprofile_list *tp_current)
 {
 	int i = 0;
@@ -42,6 +57,9 @@ int print_taskprofile_list(struct file_write_data* fw_data, int initial_state, i
 	return ++list_number;
 }
 
+/*
+ char string helper functions
+*/
 char * _strcat(char *dest, const char *src)
 {
 	int i,j;
@@ -79,7 +97,29 @@ char * _strrchr(char *dest, const char *src, const char delim)
 	return dest;
 }
 
-char* get_exe_path(struct mm_struct *mm)
+// _parse_path
+// @param
+// fw_data: target file_write_data structure to write path information.
+// binary_path: current task binary path ( you can retrieve path using _get_binary_path function.
+void _parse_path(struct file_write_data* fw_data, char* binary_path)
+{
+	_strcpy(fw_data->dump_path, binary_path);
+	_strrchr(fw_data->file_name, binary_path, '/');
+	// make exe_dump as result file 
+	_strcat(fw_data->dump_path, ".csv"); //support csv file format
+	//printk(KERN_ALERT "%s open \n", fw_data->dump_path);
+}
+
+// _get_binary_path
+// @param
+// mm: mm_struct structure in task structure
+// @return
+// binary full path
+// @FIXME
+// kfree?? pathname (allocated) will be freed?
+// @reference
+// d_path: https://www.kernel.org/doc/htmldocs/filesystems/API-d-path.html
+char* _get_binary_path(struct mm_struct *mm)
 {
 	char *p = NULL;
 	if (mm) {
@@ -88,6 +128,9 @@ char* get_exe_path(struct mm_struct *mm)
 			char *pathname = kzalloc(PATH_MAX, GFP_ATOMIC);
 			if (pathname) {
 				p = d_path(&mm->exe_file->f_path, pathname, PATH_MAX);
+				//kfree(pathname); 
+				// it raise kernel panic. 
+				//i think d_path return value uses pathname buffer. (FIXME: when will you free this memory?)
 			}
 		}
 		up_read(&mm->mmap_sem);
@@ -133,7 +176,10 @@ static ssize_t profiler_write(struct file *file,
 	return SUCCESS;
 }
 
-// file operation
+/*
+ file operations
+ in this module, file_open, file_close, file_sync, file_write are only used.
+*/
 struct file* file_open(const char* path, int flags, int rights)
 {
 	struct file* filp = NULL;
@@ -186,6 +232,14 @@ int file_sync(struct file* file)
 	vfs_fsync(file, 0);
 	return 0;
 }
+
+// print_log
+// @summary
+// genrally write log data to target file.
+// it supports formatted string.
+// @FIXME
+// you can improve this function to use buffering.
+// frequently called file io.
 void print_log(struct file_write_data* fw_data, const char *fmt, ...)
 {
 	va_list args;
@@ -285,7 +339,7 @@ void dump_profile_result(void)
 	int cpu_counts = num_online_cpus();
 
 	// dump path 
-	char *p = get_exe_path(current->active_mm);
+	char *p = _get_binary_path(current->active_mm);
 
 	// initialize write data structure
 	struct file_write_data* fw_data = NULL;
@@ -294,38 +348,23 @@ void dump_profile_result(void)
 		fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
 		if (fw_data)
 		{
-			_strcpy(fw_data->dump_path, p);
-			_strrchr(fw_data->file_name, p, '/');
-			// make exe_dump as result file 
-			_strcat(fw_data->dump_path, ".csv");
-			//printk(KERN_ALERT "%s open \n", fw_data->dump_path);
+			_parse_path(fw_data);
 			fw_data->file = file_open(fw_data->dump_path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC , 0644);
 			if (fw_data->file == NULL)
 				printk(KERN_ALERT "%s open failed\n",fw_data->dump_path);
 		}
 	}
 
-	//print_log(fw_data, "thread_number, cpu_number, execution_time, start_time, end_time\n");
 	do {
 		int j = 0;
-		//print_log(fw_data, "thread: %d\n", i);
 
 		for (j = 0; j < cpu_counts; j++)
 		{
-			//int base_number = 0;
 			if (task->profile_data.cpu_data == NULL)
 			{
 				printk(KERN_ALERT "[WARN] cpu_data is NULL when dump_profile_result - cpu counts %d %p\n", j, task->profile_data.cpu_data);
 				continue;
 			}
-			//base_number = MAX_TIME_COUNT * (task->profile_data.cpu_data[j].list_counts-1);
-			//print_log(fw_data, ">> cpu: %d initial_state: %d list_counts: %d\n", 
-			//    j, 
-			//    task->profile_data.cpu_data[j].initial_state,
-			//    task->profile_data.cpu_data[j].list_counts);
-			//print_log(fw_data, ">>>> resume_cnt: %d suspend_cnt: %d\n",
-			//      base_number + task->profile_data.cpu_data[j].head->resume_counts, 
-			//      base_number + task->profile_data.cpu_data[j].head->suspend_counts); 
 			print_taskprofile_list(fw_data, task->profile_data.cpu_data[j].initial_state, i, j, task->profile_data.cpu_data[j].head);
 		}
 
