@@ -23,6 +23,9 @@
 #include <thread>
 #include <cstdio>
 #include <iostream>
+#include <fstream>
+
+using namespace std;
 
 //------------------------------------------------------------------------------
 /// @brief the profiler interface
@@ -78,6 +81,8 @@ class CSimpleProfiler: public CProfiler {
     ///
     /// @description update total cycles and llc misses to compute llc miss rate
     virtual void StopProfiling(void);
+
+    virtual void StopProfiling(unsigned long jiffies, ostream & dout);
 
     /// @}
 

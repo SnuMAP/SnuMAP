@@ -42,7 +42,7 @@
 #endif
 #endif
 
-#define PRINT_COUNT	1
+#define PRINT_COUNT	0
 
 struct read_format {
   unsigned long long value;         /* The value of the event */
