@@ -1,0 +1,57 @@
+@@ -33,6 +33,19 @@ import org.apache.hadoop.util.GenericOptionsParser;
+ 
+ public class WordCount {
+ 
++  // Load shared (native) library
++  // Assumption: library is located at /usr/lib
++  static {
++    System.load("/usr/lib/libSnuMap.so");
++  }
++
++  // Native method delcaration
++  private static native void snumapStart();
++  private static native void snumapInit();
++  private static native void snumapCleanup();
++  private static native void snumapStop();
++  private static native void snumapDumpResults();
++
+   public static class TokenizerMapper 
+        extends Mapper<Object, Text, Text, IntWritable>{
+     
+@@ -67,10 +80,20 @@ public class WordCount {
+ 
+   public static void main(String[] args) throws Exception {
+     
++    // Initi and start SnuMap
++    snumapInit();
++    snumapStart();
++    
+     Configuration conf = new Configuration();
+     String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+     if (otherArgs.length < 2) {
+       System.err.println("Usage: wordcount <in> [<in>...] <out>");
++     
++      // Stop and Dump data for SnuMap
++      snumapStop();
++      snumapDumpResults();
++      snumapCleanup();
++      
+       System.exit(2);
+     }
+     Job job = new Job(conf, "word count");
+@@ -86,6 +109,13 @@ public class WordCount {
+     FileOutputFormat.setOutputPath(job,
+       new Path(otherArgs[otherArgs.length - 1]));
+     
+-    System.exit(job.waitForCompletion(true) ? 0 : 1);
++    boolean result = job.waitForCompletion(true);
++   
++    // Stop and Dump data for SnuMap
++    snumapStop();
++    snumapDumpResults();
++    snumapCleanup();
++
++    System.exit(result ? 0 : 1);
+   }
+ }
+

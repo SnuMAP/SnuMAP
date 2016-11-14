@@ -1,0 +1,66 @@
+================================================================================
+SnuMAP Installation Guide
+
+================================================================================
+< Prerequisites >
+
+1. Super-user access (sudo) required
+
+2. Set the environment variables
+   $ source env.sh
+
+3. numactl installed (# apt-get install numactl)
+
+4. python (including matplotlib) installed
+
+< Testbed >
+The framework is evaluated on Debian Linux (Ubuntu).
+The experimental environment, a 32-core AMD Opteron server, is provided to the
+testers. The required programs are already installed on the machine.
+
+================================================================================
+< Installation of the SnuMAP-patched Linux kernel >
+To enable SnuMAP in your linux kernel, you have to patch our kernel implementation.
+You can find our patch in src/kernel-patches/
+
+We provide two patches for linux-3.19, and tilera-ported linux-3.14 kernel.
+If you use different version of Linux, then we recommmend you to patch our
+implementation in your Linux kernel.
+We add just tens of lines of codes.
+We tested the Linux kernel patch on Linux 3.X and 2.X.
+
+We think the kernel porting will not harm your Linux if you use Linux kernel 
+version 3.X or 2.X.
+
+================================================================================
+< Installation of the SnuMAP >
+The installation script creates all SnuMAP binaries, kernel module,
+and library files.
+
+1. You have to set environment variables before every SnuMAP use.
+   $ source env.sh
+
+2. We provide an installation script that installs all SnuMAP software modules
+   $ ./install.sh
+
+< Uninstall SnuMAP >
+The uninstallation script removes all SnuMAP binaries, kernel module,
+and library files
+
+1. $ source env.sh
+2. $ ./uninstall.sh
+
+================================================================================
+< Installation of the applications - use cases >
+
+We provide some test applications.
+For example, if you want to test NPB-OpenMP applications with SnuMAP,
+1. $ cd $SNUMAP_ROOT/examples/NPB3.3-OMP-C/
+2. $ make suite
+This command creates all applications in the benchmark suite.
+This benchmark set is not ours, it is from http://aces.snu.ac.kr
+
+================================================================================
+
+Last modification: 2016-11-14
+

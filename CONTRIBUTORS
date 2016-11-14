@@ -1,4 +1,17 @@
-Younghyun Cho <yhcho614@gmail.com>
-Camilo Celis <camilo.celis0807@gmail.com>
-Heesik Shin <sinheesik@gmail.com>
-Surim Oh <ohsul92@gmail.com>
+//------------------------------------------------------------------------------
+/// SnuMAP: SNU Multi/many-core Applications Profiler
+///
+/// SnuMAP is developed by Computer Systems and Platforms Laboratory at
+/// Seoul National University in South Korea.
+///
+/// Contributors:
+/// Younghyun Cho, Camilo Celis, Heesik Shin, Surim Oh, and Bernhard Egger
+///
+/// Contact:
+/// Younghyun Cho <yhcho614@gmail.com; younghyun@csap.snu.ac.kr>
+/// Camilo Celis <camilo.celis0807@gmail.com; camilo@csap.snu.ac.kr>
+/// Bernhard Egger <bernhard@csap.snu.ac.kr>
+/// 
+//------------------------------------------------------------------------------
+
+

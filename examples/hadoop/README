@@ -1,0 +1,62 @@
+================================================================================
+Example: Hadoop
+
+Java Native Interface Implementation for SnuMap.
+
+Note: Requires modification of the JNI native (C) method names as the Dynamic 
+linker looks for a specific format which includes the package and class name.
+
+`Java_<package_name>_<class_name>_<native_method_name>`
+
+
+Ex: 
+```
+// Java code
+
+package example;
+
+public class foo {
+  ....
+  private native static void bar(...);
+
+  ...
+  public static void main(String [] args) {
+    ...
+    bar(...); // Call of native method
+    ... 
+  }
+}
+
+---
+
+// JNI Library format
+JNIEXPORT void JNICALL Java_example_foo_bar(...)
+```
+
+--------------------------------------------------------------------------------
+Contents
+
+* SnuMap.h      SnuMap JNI Library header
+* libSnuMap.c   SnuMap JNI Library implementation
+* Makefile      SnuMap JNI Library Makefile for compilation
+
+
+--------------------------------------------------------------------------------
+Interface Usage:
+
+1. Export the SnuMap environment variable.
+2. Export the `JAVA_HOME` environment variable.
+3. Compile and Install the SnuMap Module.
+4. Compile the JNI interface using the `make` command.
+  * This will generate a `libSnuMap.so` shared library which then needs to be
+  placed at a safe location. In our example we statically load the shared library
+  from `/usr/lib` thus we first moved `libSnuMap.so` to `/usr/lib`
+
+--------------------------------------------------------------------------------
+Modifications to target application:
+
+1. Include a static scope to load the `libSnuMap.so` shared library.
+2. Declare the native functions
+3. Call the native functions
+
+* See the `WordCount` example for details

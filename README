@@ -1,0 +1,59 @@
+================================================================================
+SnuMAP
+
+SnuMAP is an open-source OS-level multi/many-core application profiler.
+This framework contains the software package for SnuMAP, and provide
+installation and SnuMAP testing guide.
+
+SnuMAP is developed by Younghyun Cho, Camilo A. Celis Guzman, Heesik Shin
+at Seoul National University as part of Computer Systems and Platforms
+Laboratory (http://csap.snu.ac.kr) under the direction of Prof. Bernhard Egger.
+
+Current website:
+http://csap.snu.ac.kr/~younghyun/snumap/index.html
+
+================================================================================
+Access to a test machine
+
+If you want to test SnuMAP on our platform, contact us.
+For the testing, we can provide you the access to our one multi-core platform,
+32-core (2-socket) AMD Opteron server.
+
+Contact point: Younghyun Cho <yhcho614@gmail.com; younghyun@csap.snu.ac.kr>
+
+================================================================================
+Package Organization
+
+[bin]
+SnuMAP binaries and tools.
+
+[examples]
+Example open-source test applications, application implementations are not ours.
+This directory also contains our experimental results on our target platforms.
+
+[lib]
+SnuMAP library files.
+
+[src]
+SnuMAP software source code.
+We have several modules inside the directory.
+1. kernel-moduels
+2. kernel-patches
+3. snumap-application interface
+4. snumap-main (trace-profiler)
+5. snumap-numa (numa-performance profiler)
+
+================================================================================
+Installation Guide
+
+Please refer to the INSTALL file.
+
+================================================================================
+How to use SnuMAP?
+
+Please refer to the USAGE file.
+
+================================================================================
+
+Last modification: 2016-11-14
+

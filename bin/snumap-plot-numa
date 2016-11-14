@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import commands, subprocess, re, time, sys, csv
+import datetime
+from os.path import exists
+import os
+import itertools
+import sys
+
+number_re = "+([0-9]+\.[01-9]+|[0-9]+)"
+
+min_jiffies = 0
+once = 0
+
+input_file = "numa-merge-log.csv"
+input_stream = open(input_file, "w+")
+
+with open(sys.argv[1]) as f:
+    index = 0
+    for line in f.readlines():
+        if index is 0:
+            items = line.split()
+            if once is 0:
+                min_jiffies = items[2]
+                once = 1
+            jiffies = str(int(items[2]) - int(min_jiffies))
+            node0 = items[8]
+            input_stream.write(jiffies + ", " + node0 + ", ")
+        elif index is 16:
+            items = line.split()
+            input_stream.write(items[8] + ",\n")
+        index += 1
+        if index == 32:
+            index = 0
+
+commands.getoutput("cp $SNUMAP_ROOT/bin/gantt-numa.py .")
+commands.getoutput("./gantt-numa.py numa-merge-log.csv")
+commands.getoutput("rm gantt-numa.py")
+
+input_stream.close()
+commands.getoutput("rm numa-merge-log.csv")

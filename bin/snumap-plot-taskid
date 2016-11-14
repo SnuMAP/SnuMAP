@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+import commands
+import os
+import sys
+from subprocess import Popen, call
+
+jiffies_to_msec = 1
+min_jiffies = 9999999999
+output_filename = "output-taskid"
+
+if len(sys.argv) < 2:
+    print("usage: ./snumap-plot-taskid <trace_file.csv>")
+    sys.exit(1)
+
+# copy gantt file to current directory
+try:
+    gantt_path = os.environ['SNUMAP_ROOT'] + "/bin/gantt-taskid.py"
+    call(["cp", gantt_path, os.environ['PWD']])
+except KeyError:
+    print("ERROR: Set SNUMAP_ROOT env. variable")
+    sys.exit(1)
+
+# compute min jiffies
+for arg in sys.argv[1:]:
+    with open(arg, 'r') as f:
+        for line in f:
+            items = line.split()
+            if int(items[1]) < int(min_jiffies):
+                min_jiffies = items[1]
+
+# merge multiple inputs into single output file
+input_file = "merge-log.csv"
+input_stream = open(input_file, "w+")
+for arg in sys.argv[1:]:
+    with open(arg, "r") as f:
+        for line in f.readlines():
+            items = line.split()
+            strline = items[0] + " "
+            start = float(items[1])
+            end = float(items[2])
+
+            if start >= end:  # ignore "strange" jiffies
+                continue
+
+            strline += str((start - float(min_jiffies)) / jiffies_to_msec) + " "
+            strline += str((end - float(min_jiffies)) / jiffies_to_msec) + " "
+            strline += items[4] + "\n"
+
+            input_stream.write(strline)
+input_stream.close()
+
+# generate gpl file
+gplfile = "merge-log.gpl"
+gpl_gen = "python gantt-taskid.py -i -o " + gplfile + " " + input_file + " -t " + ','.join([x for x in sys.argv[1:]])
+Popen(gpl_gen.split(" ")).wait()
+Popen(["rm", input_file]).wait()
+
+# generate gantt chart by gnuplot with command line argument
+epsfile = output_filename + ".eps"
+# p = Popen(["gnuplot", "-p"], stdin=PIPE)
+# p.communicate("\"set terminal postscript eps color solid\"," +
+#               "\"set output '" + epsfile + "'\"," +
+#               "\"load '" + gplfile + "'\"," +
+#               "\"unset output\"")
+# p.wait()
+gantt_gnuplot = "gnuplot -e " + "\"set terminal postscript eps color solid\"" + \
+            " -e " + "\"set output '" + epsfile + "'\"" + \
+            " -e " + "\"load '" + gplfile + "'\"" + \
+            " -e " + "\"unset output\""
+commands.getoutput(gantt_gnuplot)
+
+call(["rm", gplfile])
+call(["rm", "gantt-taskid.py"])
+call(["epstopdf", epsfile])

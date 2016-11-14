@@ -1,0 +1,37 @@
+================================================================================
+SnuMAP Usage Guide
+
+================================================================================
+How to use SnuMAP?
+
+We provide mainly three SnuMAP use cases.
+
+We provide a video that shows the usage of SnuMAP.
+
+Goto SnuMAP-video directory and find the videos.
+
+$ cd $SNUMAP_ROOT/SnuMAP-video/
+
+1. Single application profiling
+   a. $ snumap-main [application binary]   // this execute application and dp profiling
+   b. $ snumap-plot [generated log files]  // this generate visualized execution trace from log
+
+2. Multiple application profiling
+   a. execute each application with $ snumap-main [application binary]
+   2. $ snumap-plot [log1] [log2] [] ...
+   // snumap-plot generates merged execution information of multiple applications
+   // by taking multiple log files
+
+3. NUMA-performance profiling
+   a. execute application with $ snumap-numa [application binary]
+   b. $ snumap-plot [log] // generate execution trace
+   c. $ snumap-plot [numa.log] // generate visualized NUMA performance information.
+
+   NUMA-performance profiling is architecture-dependent, the implementation
+   depends on the architecture support, and the implementation should be extended
+   to support various architectures.
+
+================================================================================
+
+Last modification: 2016-11-14
+

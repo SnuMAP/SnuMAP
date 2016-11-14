@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+try:
+    plt.style.use('ggplot')
+except Exception:
+    pass
+
+from matplotlib import cm
+import sys
+import os
+
+
+def pseudocolor(val, minval, maxval):
+    """
+    Returns a RGB text format color based on a range of values and a given value
+    :param val: value to select a color based on
+    :param minval: min value in range
+    :param maxval: max value in range
+    :return: Hex. color representation
+    """
+    f = float(val - minval) / (maxval - minval)
+    r, g, b = [cm.Paired(f)[i] for i in range(0, 3)]
+    return '#%02X%02X%02X'% (int(r*255), int(g*255), int(b*255))
+
+
+def preprocess(filename):
+    """
+    Pre-process a given file by erasing all the lines that do not contribute important information.
+    ie: start and end time is the same
+    :param filename: given file name
+    :returns min_jiffies: minimum jiffies value
+    """
+    tmp_filename = ".tmp.csv"
+    min_jiffies = 9999999999
+    with open(tmp_filename, 'w') as tmp_f:
+        with open(filename, 'r') as f:
+            for line in f:
+                items = line.split("\t")
+                start = int(items[1])
+                end = int(items[2])
+                # Only use meaningfull lines and find min_jiffies
+                if(end > start):
+                    tmp_f.write(line)
+                    if(start < min_jiffies):
+                        min_jiffies = start
+    
+    os.system("mv " + tmp_filename + " " + filename)
+    return min_jiffies
+
+init_clk = time.clock()
+# Compute application colors (done once)
+num_apps = len(sys.argv)
+colors = []
+for i in xrange(num_apps):
+    colors.append(pseudocolor(i, 0, num_apps - 1))
+
+# compute min_jiffies among all files using pre-process method
+min_jiffies = 9999999999
+for fn in sys.argv[1:]:
+    tmp_min_jiffies = preprocess(fn)
+    if(tmp_min_jiffies < min_jiffies):
+        min_jiffies = tmp_min_jiffies
+
+plt.ion()  # interactive mode
+plt.xlabel("Time (increases with Jiffies)")
+plt.ylabel("Cores")
+plt.title("Core vs. Time\n" + ', '.join([name.split("/")[-1] for name in sys.argv[1:]]))
+
+# for every input file draw set of lines
+color_idx = 0
+for fn in sys.argv[1:]: 
+    partial_clk = time.clock()
+    arr_core, arr_start, arr_end = np.loadtxt(fn, usecols=(0, 1, 2), unpack=True)
+    app = np.unique(np.genfromtxt(fn, dtype='|S0', usecols=(3), unpack=True))
+    # compute some values from imported data
+    max_core = np.max(arr_core)
+
+    # start off at 0 
+    arr_start = arr_start - min_jiffies
+    arr_end  = arr_end - min_jiffies 
+
+    # plot "gantt" like plot
+    l = plt.hlines(arr_core, arr_start, arr_end, linewidth=15, colors=colors[color_idx])
+    l.set_label(app[0])
+    color_idx += 1
+
+    plt.yticks(np.arange(-1, max_core + 2))
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+    plt.pause(0.01)
+    
+    print('Partial Elapsed time:' + str(time.clock() - partial_clk))
+
+print('Total Elapsed time:' + str(time.clock() - init_clk))
+# maximize window
+mng = plt.get_current_fig_manager()
+# mng.full_screen_toggle()
+
+# try:
+#     mng.window.showMaximized()
+# except AttributeError:
+#     try:
+#         mng.resize(*mng.window.maxsize())
+#     except AttributeError:
+#         print("Couldn't maximize the window, check your matplotlib backend")
+while True:
+    plt.pause(0.01)
