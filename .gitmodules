@@ -1,0 +1,3 @@
+[submodule "SnuMAP-misc"]
+	path = SnuMAP-misc
+	url = https://github.com/SnuMAP/SnuMAP-misc.git
