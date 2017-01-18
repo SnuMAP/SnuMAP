@@ -10,7 +10,7 @@ at Seoul National University as part of Computer Systems and Platforms
 Laboratory (http://csap.snu.ac.kr) under the direction of Prof. Bernhard Egger.
 
 Current website:
-http://csap.snu.ac.kr/~younghyun/snumap/index.html
+http://csap.snu.ac.kr/software/snumap
 
 ================================================================================
 Access to a test machine
@@ -37,7 +37,7 @@ SnuMAP library files.
 [src]
 SnuMAP software source code.
 We have several modules inside the directory.
-1. kernel-moduels
+1. kernel-module
 2. kernel-patches
 3. snumap-application interface
 4. snumap-main (trace-profiler)
@@ -55,5 +55,5 @@ Please refer to the USAGE file.
 
 ================================================================================
 
-Last modification: 2016-11-14
+Last modification: 2017-01
 
