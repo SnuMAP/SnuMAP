@@ -1,0 +1,296 @@
+diff -crB linux-3.19/arch/x86/kernel/process_64.c trace-profiler-amd/linux-3.19/arch/x86/kernel/process_64.c
+*** linux-3.19/arch/x86/kernel/process_64.c	2015-02-09 11:54:22.000000000 +0900
+--- trace-profiler-amd/linux-3.19/arch/x86/kernel/process_64.c	2016-09-28 16:25:22.177650975 +0900
+***************
+*** 158,163 ****
+--- 158,208 ----
+  	struct pt_regs *childregs;
+  	struct task_struct *me = current;
+  
++ 	/*
++ 	 * trace-profiler
++ 	 * initialize struct taskprofile_data.
++ 	 * @update 2015/10: Heesik Shin. update data structures.
++ 	 * @update 2015/11: Heesik Shin. FIXME
++ 	 * bt program calls copy_thread. thread 0 is only available after this function call.
++ 	 * start_profile -> copy_thread -> all threads except thread 0 are not available.
++ 	 * @update 2015/11: Heesik Shin. allocate new memory when copy thread collecting profile data.
++ 	 */
++ 	if (p->profile_data.starting_flag != 0)
++ 	{
++ 		// allocate memory
++ 		int i = 0;
++ 		int cpu_counts = num_online_cpus();
++ 		printk(KERN_ALERT "[WARN] copyt_thread : original : starting_flag=%d, cpu_data=%p\n",
++ 				p->profile_data.starting_flag, p->profile_data.cpu_data);
++ 		p->profile_data.starting_flag = 0;
++ 		p->profile_data.cpu_data
++ 			= kzalloc(sizeof(struct taskprofile_cpu_data) * cpu_counts, GFP_KERNEL);
++ 		// initialize memory.
++ 		for (i = 0; i < cpu_counts; i++)
++ 		{
++ 			p->profile_data.cpu_data[i].initial_state = 0;
++ 			p->profile_data.cpu_data[i].head
++ 				= kzalloc (sizeof(struct taskprofile_list), GFP_KERNEL);
++ 			p->profile_data.cpu_data[i].list_counts = 1;
++ 
++ 			// time data allocation and initialization
++ 			p->profile_data.cpu_data[i].head->next = NULL;
++ 			p->profile_data.cpu_data[i].head->resume_counts = 0;
++ 			p->profile_data.cpu_data[i].head->suspend_counts = 0;
++ 
++ 			p->profile_data.cpu_data[i].head->resume_time
++ 				= kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
++ 			p->profile_data.cpu_data[i].head->suspend_time
++ 				= kzalloc (sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
++ 		}
++ 		p->profile_data.starting_flag = 1;
++ 	}
++ 	else
++ 	{
++ 		p->profile_data.starting_flag = 0;
++ 		p->profile_data.cpu_data = NULL;
++ 	}
++ 
+  	p->thread.sp0 = (unsigned long)task_stack_page(p) + THREAD_SIZE;
+  	childregs = task_pt_regs(p);
+  	p->thread.sp = (unsigned long) childregs;
+diff -crB linux-3.19/arch/x86/kernel/process.c trace-profiler-amd/linux-3.19/arch/x86/kernel/process.c
+*** linux-3.19/arch/x86/kernel/process.c	2015-02-09 11:54:22.000000000 +0900
+--- trace-profiler-amd/linux-3.19/arch/x86/kernel/process.c	2016-09-28 16:25:22.177650975 +0900
+***************
+*** 107,112 ****
+--- 107,139 ----
+  	struct thread_struct *t = &me->thread;
+  	unsigned long *bp = t->io_bitmap_ptr;
+  
++ 	/*
++ 	 * treace-profiler
++ 	 * free memory that profile_data used.
++ 	 * if additional memory allocates, you must fix free operations.
++ 	 * @update 2015/10: Heesik Shin. update data structures.
++ 	 */
++ 	if (me->profile_data.cpu_data != NULL)
++ 	{
++ 		int i = 0;
++ 		for (i =0; i < num_online_cpus() ; i++)
++ 		{
++ 			struct taskprofile_list *tp_current 
++ 				= me->profile_data.cpu_data[i].head;
++ 			while (tp_current != NULL)
++ 			{
++ 				struct taskprofile_list *tp_next = tp_current->next;
++ 				if (tp_current->resume_time != NULL)
++ 					kfree(tp_current->resume_time);
++ 				if (tp_current->suspend_time != NULL)
++ 					kfree(tp_current->suspend_time);
++ 				kfree(tp_current);
++ 				tp_current = tp_next;
++ 			}
++ 		}
++ 		kfree(me->profile_data.cpu_data);
++ 	}
++ 
+  	if (bp) {
+  		struct tss_struct *tss = &per_cpu(init_tss, get_cpu());
+  
+diff -crB linux-3.19/include/linux/sched.h trace-profiler-amd/linux-3.19/include/linux/sched.h
+*** linux-3.19/include/linux/sched.h	2015-02-09 11:54:22.000000000 +0900
+--- trace-profiler-amd/linux-3.19/include/linux/sched.h	2016-09-28 16:25:25.933650840 +0900
+***************
+*** 1271,1276 ****
+--- 1271,1307 ----
+  	perf_nr_task_contexts,
+  };
+  
++ /*
++  * trace-profiler
++  * taskprofile_data
++  * Fix-me : cnt size, time size. 
++  *     it depends on CPU numbers and running time.
++  * @update 2015/10: Heesik Shin. update data structures.
++  * @update 2015/10: Heesik Shin. fix cpu number specific problem using num_online_cpus().
++  * @update 2015/10: Heesik Shin. fix time data size problem. (it depends on MAX_TIME_COUNT and MAX_TIME_STRUCTURE_COUNT)
++  */
++ 
++ #define MAX_TIME_COUNT 10000
++ #define MAX_TIME_STRUCTURE_COUNT 1000
++ // profile list. if counts >= MAX_TIME_COUNT, allocate next.
++ struct taskprofile_list {
++ 	struct taskprofile_list *next;
++ 	int resume_counts;
++ 	int suspend_counts;
++ 	unsigned long *resume_time;
++ 	unsigned long *suspend_time;
++ };
++ // profile data structure per each cpu.
++ struct taskprofile_cpu_data {
++ 	int initial_state; //-1 - start with suspend , 0 - before start, 1 - start with resume.
++ 	int list_counts;
++ 	struct taskprofile_list *head;
++ };
++ struct taskprofile_data {
++ 	int starting_flag; // running = 1 , stopped = 0
++ 	struct taskprofile_cpu_data *cpu_data; // depends on number of CPU 
++ };
++ 
+  struct task_struct {
+  	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
+  	void *stack;
+***************
+*** 1701,1706 ****
+--- 1732,1738 ----
+  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
+  	unsigned long	task_state_change;
+  #endif
++ 	struct taskprofile_data profile_data;
+  };
+  
+  /* Future-safe accessor for struct task_struct's cpus_allowed. */
+diff -crB linux-3.19/kernel/sched/core.c trace-profiler-amd/linux-3.19/kernel/sched/core.c
+*** linux-3.19/kernel/sched/core.c	2015-02-09 11:54:22.000000000 +0900
+--- trace-profiler-amd/linux-3.19/kernel/sched/core.c	2016-09-28 16:25:26.153650832 +0900
+***************
+*** 2324,2329 ****
+--- 2324,2452 ----
+  }
+  
+  /*
++  * trace-profiler
++  * resume_thread / suspend_thread function that calls when context_switching.
++  * only operates starting_flag is not 0. ( like 1)
++  * Features : time size issue.
++  *        it depends on running time.
++  *        if data exceed MAX_TIME_COUNT, allocate new taskprofile_list.
++  * @update 2015/09: Heesik Shin. get_cycles() -> jiffies_to_usecs(jiffies).
++  * @update 2015/10: Heesik Shin. update data structures.
++  * @update 2015/10: Heesik Shin. fix cpu number specific problem using num_online_cpus().
++  * @update 2015/10: Heesik Shin. fix time data size problem. (it depends on MAX_TIME_COUNT and MAX_TIME_STRUCTURE_COUNT)
++  */
++ 
++ static inline void resume_thread(struct task_struct* next)
++ {
++ 	if (next->profile_data.starting_flag) {
++ 		int cpu = smp_processor_id();
++ 
++ 		if (cpu >= num_online_cpus() || cpu <0) {
++ 			printk(KERN_ALERT "unexpected cpu number: %d\n", cpu);
++ 			return;
++ 		}
++ 
++ 		// state = 0 => start newly!. check resume or suspend!
++ 		if (next->profile_data.cpu_data[cpu].initial_state == 0)
++ 			next->profile_data.cpu_data[cpu].initial_state = 1;
++ 
++ 		if (next->profile_data.cpu_data[cpu].head->resume_counts 
++ 				< MAX_TIME_COUNT) {
++ 			struct taskprofile_list *tp_current
++ 				= next->profile_data.cpu_data[cpu].head;
++ 			tp_current->resume_time[tp_current->resume_counts++]
++ 				// Change the code that measures CPU time by using RDTSC
++ 				// - why? each CPUs has different register values
++ 				// - use a global variable in Kernel : jiffies ("linux/jiffies.h")
++ 				//= get_cycles();
++ 				= jiffies_to_usecs(jiffies);
++ 		}
++ 		else
++ 		{
++ 			if (next->profile_data.cpu_data[cpu].list_counts 
++ 					<= MAX_TIME_STRUCTURE_COUNT)
++ 			{
++ 				// allocate new memory and initialize
++ 				struct taskprofile_list *new_list
++ 					= kzalloc(sizeof(struct taskprofile_list), GFP_KERNEL);
++ 				new_list->next = next->profile_data.cpu_data[cpu].head;
++ 				new_list->resume_counts = 0;
++ 				new_list->suspend_counts = 0;
++ 				new_list->resume_time
++ 					= kzalloc(sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
++ 				new_list->suspend_time
++ 					= kzalloc(sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
++ 
++ 				next->profile_data.cpu_data[cpu].head = new_list;
++ 				next->profile_data.cpu_data[cpu].list_counts++;
++ 			}
++ 			else 
++ 			{
++ 				printk(KERN_ALERT "OMP_Prof Errors. Please modify MAX_TIME_STRUCTURE_COUNT value in include/linux/sched.h file.\n");
++ 				return;
++ 			}
++ 		}
++ 	}
++ }
++ 
++ static inline void suspend_thread(struct task_struct* prev)
++ {
++ 	if (prev->profile_data.starting_flag) {
++ 		int cpu = smp_processor_id();
++ 
++ 		if (cpu >= num_online_cpus() || cpu <0) {
++ 			printk(KERN_ALERT "unexpected cpu number: %d\n", cpu);
++ 			return;
++ 		}
++ 
++ 		// state = 0 => start newly!. check resume or suspend!
++ 		if (prev->profile_data.cpu_data[cpu].initial_state == 0)
++ 		{
++ 			// if state is -1, resume_time[0] is invalid value.
++ 			prev->profile_data.cpu_data[cpu].initial_state = -1;
++ 			prev->profile_data.cpu_data[cpu].head->resume_time[prev->profile_data.cpu_data[cpu].head->resume_counts++] = 0;
++ 		}
++ 
++ 		if (prev->profile_data.cpu_data[cpu].head->suspend_counts 
++ 				< MAX_TIME_COUNT) {
++ 			struct taskprofile_list *tp_current
++ 				= prev->profile_data.cpu_data[cpu].head;
++ 			tp_current->suspend_time[tp_current->suspend_counts++]
++ 				// Change the code that measures CPU time by using RDTSC
++ 				// - why? each CPUs has different register values
++ 				// - use a global variable in Kernel : jiffies ("linux/jiffies.h")
++ 				//= get_cycles();
++ 				= jiffies_to_usecs(jiffies);
++ 		}
++ 		else
++ 		{
++ 			if (prev->profile_data.cpu_data[cpu].list_counts 
++ 					<= MAX_TIME_STRUCTURE_COUNT)
++ 			{
++ 				// allocate new memory and initialize
++ 				struct taskprofile_list *new_list
++ 					= kzalloc(sizeof(struct taskprofile_list), GFP_KERNEL);
++ 				new_list->next = prev->profile_data.cpu_data[cpu].head;
++ 				new_list->resume_counts = 0;
++ 				new_list->suspend_counts = 0;
++ 				new_list->resume_time
++ 					= kzalloc(sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
++ 				new_list->suspend_time
++ 					= kzalloc(sizeof(unsigned long) * MAX_TIME_COUNT, GFP_KERNEL);
++ 
++ 				prev->profile_data.cpu_data[cpu].head = new_list;
++ 				prev->profile_data.cpu_data[cpu].list_counts++;
++ 			}
++ 			else 
++ 			{
++ 				printk(KERN_ALERT "OMP_Prof Errors. Please modify MAX_TIME_STRUCTURE_COUNT value in include/linux/sched.h file.\n");
++ 				return;
++ 			}
++ 		}
++ 	}
++ }
++ 
++ /*
+   * context_switch - switch to the new MM and the new thread's register state.
+   */
+  static inline struct rq *
+***************
+*** 2362,2367 ****
+--- 2485,2493 ----
+  	 */
+  	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
+  
++ 	suspend_thread(prev);
++ 	resume_thread(next);
++ 
+  	context_tracking_task_switch(prev, next);
+  	/* Here we just switch the register state and the stack. */
+  	switch_to(prev, next, prev);
