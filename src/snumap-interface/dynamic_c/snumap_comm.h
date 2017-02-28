@@ -21,6 +21,7 @@
 #include <sys/shm.h>
 
 #include <dlfcn.h>
+#include <errno.h>
 //#include "uthash.h"
 
 #define DEBUG_MODE    ///< debug mode shows debug messages

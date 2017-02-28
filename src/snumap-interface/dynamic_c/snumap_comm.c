@@ -31,30 +31,60 @@ int init_profiling(void)
 int start_profiling(void)
 {
   if (is_opened) {
-    if (ioctl(fd, IOCTL_START_PROFILING, NULL) < 0) {
-      fprintf(stderr, "ioctl error\n");
-    }
+	while (1) {
+		if (ioctl(fd, IOCTL_START_PROFILING, NULL) < 0) {
+			if (errno == EBUSY) { // Try again
+				usleep(1000);
+				continue;
+			}
+			fprintf(stderr, "errno : %d\n", errno);
+			fprintf(stderr, "ioctl error\n");
+		}
 
-    is_started = 1;
+		is_started = 1;
+		break;
+	}
   }
 }
 
 int stop_profiling(void)
 {
   if (is_opened) {
-    if (ioctl(fd, IOCTL_STOP_PROFILING, NULL) < 0) {
-      fprintf(stderr, "ioctl error\n");
-    }
+	while (1) {
+		if (ioctl(fd, IOCTL_STOP_PROFILING, NULL) < 0) {
+			if (errno == EBUSY) { // Try again
+				usleep(1000);
+				continue;
+			}
+			fprintf(stderr, "errno : %d\n", errno);
+			fprintf(stderr, "ioctl error\n");
+		}
 
-    is_started = 0;
+		is_started = 0;
+		break;
+	}
   }
 }
 
 int dump_profile_result(void)
 {
+	int cnt = 0;
 	if (is_opened) {
-		if (ioctl(fd, IOCTL_DUMP_PROFILED_RESULT, NULL) < 0) {
-			fprintf(stderr, "ioctl error\n");
+		while (1) {
+			if (ioctl(fd, IOCTL_DUMP_PROFILED_RESULT, NULL) < 0) {
+				if (errno == EBUSY) { // Try again
+					if (cnt == 0) usleep(100000);
+					else if (cnt == 1) usleep(250000);
+					else if (cnt == 2) usleep(500000);
+					else sleep(1);
+					cnt++;
+					continue;
+				}
+				fprintf(stderr, "errno : %d\n", errno);
+				fprintf(stderr, "ioctl error\n");
+			}
+			
+			break;
 		}
 	}
 }
