@@ -79,6 +79,14 @@ struct file_write_data
 };
 void print_log(struct file_write_data* fw_data, const char *fmt, ...);
 
+#define COALESCE 1
+
+int first_log_flag = 1;
+int last_cpu_number = -1;
+unsigned long last_resume_time = 0;
+unsigned long last_suspend_time = 0;
+pid_t last_pid = -1;
+
 // ioctl definition
 #define IOCTL_START_PROFILING      _IOR(MAJOR_NUM, 1, NULL)
 #define IOCTL_STOP_PROFILING       _IOR(MAJOR_NUM, 2, NULL)
@@ -94,11 +102,26 @@ struct task_struct *find_process_by_pid(pid_t pid);
 
 #define DEBUG_MODE 0
 #define ACCESS_ONLY_ONE 0
+#define START_PROFILING_ONE 1
+#define STOP_PROFILING_ONE 1
+#define DUMP_RESULT 1
 
 #define SUCCESS 0
 
 #if ACCESS_ONLY_ONE
 static int profiler_opened = 0;
+#endif
+
+#if START_PROFILING_ONE
+static int profiler_started = 0;
+#endif
+
+#if STOP_PROFILING_ONE
+static int profiler_stopped = 0;
+#endif
+
+#if DUMP_RESULT
+static int profiler_dumped = 0;
 #endif
 
 /* basic kernel module implementation */
@@ -114,9 +137,9 @@ static ssize_t profiler_write(struct file *file,
 		loff_t *offset);
 
 /* basic functionalities implementation */
-void start_profiling(void);
-void stop_profiling(void);
-void dump_profile_result(void);
+static int start_profiling(void);
+static int stop_profiling(void);
+static int dump_profile_result(void);
 
 /* kernel module */
 int module_start(void);

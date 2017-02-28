@@ -35,7 +35,72 @@ int print_taskprofile_list(struct file_write_data* fw_data,
 	if (tp_current == NULL) return 0;
 	else list_number = print_taskprofile_list(fw_data, initial_state, thread_number, cpu_number, tp_current->next, task);
 
+#if COALESCE
 	for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->suspend_counts; i++) {
+		if (tp_current->resume_time[i] == tp_current->suspend_time[i]) continue;
+		if (first_log_flag == 1) {
+			last_cpu_number = cpu_number;
+			last_resume_time = tp_current->resume_time[i];
+			last_suspend_time = tp_current->suspend_time[i];
+			last_pid = task->pid;
+			first_log_flag = 0;
+		}
+
+		else if ((last_cpu_number == cpu_number) && (last_pid == task->pid)) {
+			if (last_suspend_time == tp_current->resume_time[i]) {
+				last_suspend_time = tp_current->suspend_time[i];
+			}
+
+			else if (last_resume_time == tp_current->suspend_time[i]) {
+				last_resume_time = tp_current->resume_time[i];
+			}
+
+			else {
+				print_log(fw_data, "%d\t%llu\t%llu\t%s\t%ld\n",
+						last_cpu_number,
+						last_resume_time,
+						last_suspend_time,
+						fw_data->file_name,
+						last_pid
+					);
+				last_cpu_number = cpu_number;
+				last_resume_time = tp_current->resume_time[i];
+				last_suspend_time = tp_current->suspend_time[i];
+				last_pid = task->pid;
+			}
+		}
+
+		else {
+			print_log(fw_data, "%d\t%llu\t%llu\t%s\t%ld\n",
+					last_cpu_number,
+					last_resume_time,
+					last_suspend_time,
+					fw_data->file_name,
+					last_pid
+				);
+			last_cpu_number = cpu_number;
+			last_resume_time = tp_current->resume_time[i];
+			last_suspend_time = tp_current->suspend_time[i];
+			last_pid = task->pid;
+		}
+	}
+
+	if (first_log_flag == 0) {
+		print_log(fw_data, "%d\t%llu\t%llu\t%s\t%ld\n",
+				last_cpu_number,
+				last_resume_time,
+				last_suspend_time,
+				fw_data->file_name,
+				last_pid
+			);
+		first_log_flag = 1;
+	}
+
+	return ++list_number;
+
+#else
+	for (i = ((list_number == 0 && initial_state <0 ) ? 1 : 0); i < tp_current->suspend_counts; i++) {
+		if (tp_current->resume_time[i] == tp_current->suspend_time[i]) continue;
 		print_log(fw_data, "%d\t%llu\t%llu\t%s\t%ld\n",
 				cpu_number,
 				tp_current->resume_time[i], 
@@ -45,6 +110,7 @@ int print_taskprofile_list(struct file_write_data* fw_data,
 			 );
 	}
 	return ++list_number;
+#endif
 }
 
 /*
@@ -132,9 +198,9 @@ char* _get_binary_path(struct mm_struct *mm)
 static int profiler_open(struct inode *inode, struct file *file)
 {
 #if ACCESS_ONLY_ONE
-	if (profiler_Open)
+	if (profiler_opened)
 		return -EBUSY;
-	profiler_Open++;
+	profiler_opened++;
 #endif
 
 	try_module_get(THIS_MODULE);
@@ -275,13 +341,16 @@ void print_log(struct file_write_data* fw_data, const char *fmt, ...)
 	}
 }
 
-void start_profiling(void)
+static int start_profiling(void)
 {
+#if START_PROFILING_ONE
+	if (profiler_started)
+		return -EBUSY;
+	profiler_started++;
+#endif
 	struct task_struct* master_thread = current;
 	struct task_struct* task = master_thread;
 
-    profile_buffered_data = kzalloc(PROFILE_BUF_SIZE, GFP_ATOMIC);
-    profile_buffer_cnt = 0;
 
 	do {
 		// allocate memory
@@ -316,10 +385,21 @@ void start_profiling(void)
 
 		task = next_thread(task);
 	} while (task != master_thread);
+
+#if START_PROFILING_ONE
+	profiler_started--;
+#endif
+
+	return 0;
 }
 
-void stop_profiling(void)
+static int stop_profiling(void)
 {
+#if STOP_PROFILING_ONE
+	if (profiler_stopped)
+		return -EBUSY;
+	profiler_stopped++;
+#endif
 	struct task_struct* master_thread = current;
 	struct task_struct* task = master_thread;
 
@@ -327,10 +407,21 @@ void stop_profiling(void)
 		task->profile_data.starting_flag = 0;
 		task = next_thread(task);
 	} while (task != master_thread);
+
+#if STOP_PROFILING_ONE
+	profiler_stopped--;
+#endif
+
+	return 0;
 }
 
-void dump_profile_result(void)
+static int dump_profile_result(void)
 {
+#if DUMP_RESULT
+	if (profiler_dumped)
+		return -EBUSY;
+	profiler_dumped++;
+#endif
 	struct task_struct* master_thread = current;
 	struct task_struct* task = master_thread;
 	int i = 0;
@@ -341,6 +432,10 @@ void dump_profile_result(void)
 
 	// initialize write data structure
 	struct file_write_data* fw_data = NULL;
+    
+	profile_buffered_data = kzalloc(PROFILE_BUF_SIZE, GFP_ATOMIC);
+    profile_buffer_cnt = 0;
+
 	if (p)
 	{
 		fw_data = kzalloc(sizeof(struct file_write_data), GFP_ATOMIC);
@@ -402,7 +497,11 @@ void dump_profile_result(void)
 		kfree(fw_data);
 	}
 
-	return;
+#if DUMP_RESULT
+	profiler_dumped--;
+#endif
+
+	return 0;
 }
 
 unsigned long get_jiffies(void)
@@ -428,21 +527,21 @@ int profiler_ioctl(struct inode *inode, /* see include/linux/fs.h */
 		case _IOC_NR(IOCTL_START_PROFILING):
 			{
 				printk(KERN_ALERT "start_profiling called\n");
-				start_profiling();
+				ret = start_profiling();
 
 				break;
 			}
 		case _IOC_NR(IOCTL_STOP_PROFILING):
 			{
 				printk(KERN_ALERT "stop_profiling called\n");
-				stop_profiling();
+				ret = stop_profiling();
 
 				break;
 			}
 		case _IOC_NR(IOCTL_DUMP_PROFILED_RESULT):
 			{
 				printk(KERN_ALERT "dump_profiled_result called\n");
-				dump_profile_result();
+				ret = dump_profile_result();
 				printk(KERN_ALERT "dump_profiled_result finished\n");
 
 				break;
