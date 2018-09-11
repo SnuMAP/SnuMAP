@@ -233,3 +233,29 @@ void GOMP_parallel_end(void)
   GOMP_parallel_end_p();
 }
 
+void GOMP_parallel(void (*fn) (void *), void *data, unsigned num_threads, unsigned int flags)
+{
+    static void (*GOMP_parallel_p) (void (*fn) (void *),
+            void *data, unsigned num_threads, unsigned int flags);
+    char* error;
+    void* ptr;
+
+    if (is_started) {
+        unsigned long jiffies;
+        read_jiffies(&jiffies);
+
+        fprintf(call_info, "%10lu\n", jiffies);
+        fprintf(call_info, "%10d\t%10x\t%10lu\t%10lu\t",
+                call_func_id++, fn, (unsigned long)fn, jiffies);
+    }
+
+    if (!GOMP_parallel_p) {
+        GOMP_parallel_p = dlsym(RTLD_NEXT, "GOMP_parallel");
+        if ((error = dlerror()) != NULL) {
+            fputs(error, stderr);
+            exit(1);
+        }
+    }
+
+    GOMP_parallel_p(fn, data, num_threads, flags);
+}

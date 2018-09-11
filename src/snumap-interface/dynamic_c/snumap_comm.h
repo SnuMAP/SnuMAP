@@ -68,5 +68,8 @@ void GOMP_parallel_start(void (*fn) (void *), void *data, unsigned num_threads);
 /// @brief GOMP parallel end point interpositioning
 void GOMP_parallel_end(void);
 
+/// GOMP parallel region
+void GOMP_parallel (void (*fn) (void *), void *data, unsigned num_threads, unsigned int flags);
+
 #endif // __SNUMAP_COMM_H
 
