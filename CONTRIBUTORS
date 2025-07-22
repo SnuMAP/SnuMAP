@@ -1,17 +1,15 @@
 //------------------------------------------------------------------------------
 /// SnuMAP: SNU Multi/many-core Applications Profiler
 ///
-/// SnuMAP is developed by Computer Systems and Platforms Laboratory at
+/// SnuMAP was developed by Computer Systems and Platforms Laboratory at
 /// Seoul National University in South Korea.
 ///
 /// Contributors:
-/// Younghyun Cho, Camilo Celis, Heesik Shin, Surim Oh, and Bernhard Egger
+/// Younghyun Cho, Camilo A. Celis Guzman, Heesik Shin, Surim Oh, and Bernhard Egger
 ///
 /// Contact:
-/// Younghyun Cho <yhcho614@gmail.com; younghyun@csap.snu.ac.kr>
-/// Camilo Celis <camilo.celis0807@gmail.com; camilo@csap.snu.ac.kr>
+/// Younghyun Cho <younghyun@csap.snu.ac.kr>
+/// Camilo A. Celis Guzman <camilo@csap.snu.ac.kr>
 /// Bernhard Egger <bernhard@csap.snu.ac.kr>
 /// 
 //------------------------------------------------------------------------------
-
-
